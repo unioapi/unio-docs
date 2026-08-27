@@ -1,0 +1,11 @@
+{
+  "title": "API 参考",
+  "pages": [
+    "authentication",
+    "chat-completions",
+    "responses",
+    "messages",
+    "models",
+    "errors"
+  ]
+}

@@ -1,0 +1,48 @@
+---
+title: POST /v1/messages
+description: Anthropic-compatible message generation, non-streaming and named SSE.
+---
+
+## Request
+
+```bash
+curl https://api.unioapi.com/v1/messages \
+  -H "x-api-key: $UNIO_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+## Key parameters
+
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `model` | string, required | Unio model identifier; echoed in responses |
+| `max_tokens` | integer, required | Output cap required by the Anthropic protocol |
+| `messages` | array, required | Anthropic-shaped message list |
+| `stream` | boolean | Named SSE events ending with `message_stop` |
+
+Send the `anthropic-version` header; fields are validated against the Anthropic protocol shape.
+
+## Response (excerpt)
+
+```json
+{
+  "model": "claude-sonnet-5",
+  "role": "assistant",
+  "content": [{ "type": "text", "text": "..." }],
+  "stop_reason": "end_turn",
+  "usage": { "input_tokens": 10, "output_tokens": 25 }
+}
+```
+
+## Error envelope note
+
+Regular errors after protocol handling begins use the Anthropic native error shape; but
+**authentication failures** happen before protocol handling and currently return the generic
+OpenAI envelope (see [Authentication](/en/docs/api/authentication)). Full status codes:
+[Errors](/en/docs/api/errors).

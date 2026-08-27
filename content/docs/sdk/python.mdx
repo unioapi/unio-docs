@@ -1,0 +1,55 @@
+---
+title: Python
+description: 沿用 openai 或 anthropic 官方 SDK，只改基础地址。
+---
+
+## openai SDK
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.unioapi.com/v1",
+    api_key="<UNIO_API_KEY>",
+)
+
+resp = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(resp.choices[0].message.content)
+```
+
+Responses API 同样可用：
+
+```python
+resp = client.responses.create(
+    model="gpt-5.6-sol",
+    input="Hello",
+)
+print(resp.output_text)
+```
+
+## anthropic SDK
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.unioapi.com",
+    api_key="<UNIO_API_KEY>",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(message.content[0].text)
+```
+
+## 说明
+
+- openai SDK 的 `base_url` 带 `/v1`；anthropic SDK 的 `base_url` 不带（SDK 自行拼接 `/v1/messages`）。
+- 建议密钥从环境变量读取：`api_key=os.environ["UNIO_API_KEY"]`。
+- 流式用法见[流式调用](/docs/sdk/streaming)。

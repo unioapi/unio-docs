@@ -1,0 +1,79 @@
+---
+title: 5 分钟快速开始
+description: 获取 API Key、指向统一入口、发出第一次调用。
+---
+
+## 1. 获取 API Key
+
+在[工作台](https://console.unioapi.com)创建 API Key。一把密钥即可调用线路内的全部模型。
+
+```bash
+export UNIO_API_KEY="sk-unio-..."
+```
+
+密钥只在创建时展示一次，请妥善保存；不要提交进代码仓库。
+
+## 2. 指向统一入口
+
+把现有代码或工具的基础地址改为：
+
+```text
+https://api.unioapi.com
+```
+
+- OpenAI-compatible 客户端通常填 `https://api.unioapi.com/v1`；
+- Anthropic-compatible 客户端（如 Claude Code）填 `https://api.unioapi.com`。
+
+请求格式、SDK 与调用习惯保持不变。
+
+## 3. 发出第一次调用
+
+OpenAI-compatible（Chat Completions）：
+
+```bash
+curl https://api.unioapi.com/v1/chat/completions \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+Anthropic-compatible（Messages）：
+
+```bash
+curl https://api.unioapi.com/v1/messages \
+  -H "x-api-key: $UNIO_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+收到 200 响应即接入成功，响应中的 `model` 字段回显你请求的 Unio 模型标识：
+
+```json
+{
+  "object": "chat.completion",
+  "model": "gpt-5.6-sol",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "Hello! ..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 8, "completion_tokens": 12, "total_tokens": 20 }
+}
+```
+
+## 下一步
+
+- 在编程工具里使用：[Claude Code](/docs/clients/claude-code)、[Codex](/docs/clients/codex)、[Cursor](/docs/clients/cursor)
+- 查看可调用的模型：[GET /v1/models](/docs/api/models)
+- 了解流式输出：[流式调用](/docs/sdk/streaming)
+- 理解账单与限额：[计费与用量](/docs/guides/billing)、[限流](/docs/guides/rate-limits)

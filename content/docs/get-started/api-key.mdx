@@ -1,0 +1,30 @@
+---
+title: 获取 API Key
+description: 在工作台创建密钥，以及两种等价的认证方式。
+---
+
+## 创建密钥
+
+1. 登录[工作台](https://console.unioapi.com)。
+2. 进入 API Key 页面，创建新密钥。
+3. 复制并保存密钥——它只在创建时完整展示一次。
+
+## 两种认证头
+
+所有受保护的 `/v1` 接口共用同一套提取规则，以下两种方式等价：
+
+```bash
+# 方式一：x-api-key（Anthropic 协议惯例）
+curl https://api.unioapi.com/v1/models -H "x-api-key: $UNIO_API_KEY"
+
+# 方式二：Authorization Bearer（OpenAI 协议惯例）
+curl https://api.unioapi.com/v1/models -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+两个头同时存在时，`x-api-key` 优先。详见 [认证](/docs/api/authentication)。
+
+## 保管建议
+
+- 通过环境变量注入密钥，不要写进代码或配置文件明文提交。
+- 按用途拆分多把密钥，便于审计与轮换。
+- 密钥泄露或不再使用时，在工作台撤销；撤销立即生效。

@@ -1,0 +1,71 @@
+---
+title: Codex
+description: From fresh install to UnioAPI via config.toml, over the Responses API.
+---
+
+Codex is OpenAI's terminal coding assistant. It connects to UnioAPI through a custom provider
+via `POST /v1/responses`.
+
+## 1. Install Codex CLI
+
+Skip to section 2 if it is already installed. Requires Node.js (18 or newer):
+
+```bash
+npm install -g @openai/codex
+codex --version
+```
+
+## 2. Add the UnioAPI provider
+
+Edit the config file — `~/.codex/config.toml` on macOS / Linux,
+`%USERPROFILE%\.codex\config.toml` on Windows (create it if missing):
+
+```toml
+model = "gpt-5.6-sol"
+model_provider = "unioapi"
+
+[model_providers.unioapi]
+name = "UnioAPI"
+base_url = "https://api.unioapi.com/v1"
+env_key = "UNIO_API_KEY"
+wire_api = "responses"
+```
+
+Three key points:
+
+- `wire_api = "responses"`: since February 2026 Codex only supports the Responses transport
+  (`wire_api = "chat"` was removed; older guides are outdated). UnioAPI serves
+  `POST /v1/responses` natively.
+- Top-level `model_provider` must match the `[model_providers.<id>]` id;
+  `openai`, `ollama`, and `lmstudio` are reserved ids.
+- `env_key` names the environment variable that holds your key; the key never lives in the file.
+
+## 3. Export the key and launch
+
+### macOS / Linux
+
+```bash
+SHELL_RC="$HOME/.zshrc"; case "$SHELL" in *bash*) SHELL_RC="$HOME/.bashrc";; esac
+echo 'export UNIO_API_KEY="your UnioAPI key"' >> "$SHELL_RC"
+source "$SHELL_RC"
+codex
+```
+
+### Windows (PowerShell)
+
+```powershell
+setx UNIO_API_KEY "your UnioAPI key"
+```
+
+Reopen the terminal, then run `codex`. A normal reply means you are connected. To switch models,
+change the top-level `model` to any OpenAI-protocol model from
+[GET /v1/models](/en/docs/api/models).
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Provider config error on launch | `wire_api` must be `responses`; top-level `model_provider` must match the block id. |
+| 401 authentication failed | Confirm `UNIO_API_KEY` is exported and matches `env_key`. On Windows, reopen the terminal after `setx`. |
+| 400 parameter rejected | Capabilities like `background` are out of scope — see [POST /v1/responses](/en/docs/api/responses). |
+| 404 model not found | Top-level `model` is not an available model identifier. |

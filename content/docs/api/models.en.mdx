@@ -1,0 +1,58 @@
+---
+title: GET /v1/models
+description: List callable models, capability tags, and each model's available entry protocols.
+---
+
+## Request
+
+```bash
+curl https://api.unioapi.com/v1/models \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+## Response (excerpt)
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.6-sol",
+      "object": "model",
+      "capabilities": ["tools", "vision"],
+      "protocols": ["openai"]
+    },
+    {
+      "id": "claude-sonnet-5",
+      "object": "model",
+      "capabilities": ["tools"],
+      "protocols": ["anthropic", "openai"]
+    }
+  ]
+}
+```
+
+## Field semantics
+
+- **List scope**: returns every enabled model, **not filtered by the protocol you used for the
+  request** — a model bound only to Anthropic channels still appears in the list.
+- **`protocols`** (extension field): the set of entry protocols currently able to serve the
+  model (deduplicated, ascending). Use it to decide whether the model is callable over your
+  protocol; it always equals actual supply capability — there is no "declared but unreachable".
+- **`capabilities`**: aggregated capability tags for the model.
+- Appearing in the list is a product commitment, but **does not guarantee an executable
+  candidate at this moment**; a 503 on call is possible — see [Errors](/en/docs/api/errors).
+
+## Capability filtering
+
+`?capability=` AND-filters on capability tags and can be repeated:
+
+```bash
+curl "https://api.unioapi.com/v1/models?capability=tools&capability=vision" \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+## Billing note
+
+This endpoint incurs no call billing and creates no request record, but it shares request
+admission with other `/v1` endpoints — aggressive polling may get 429.

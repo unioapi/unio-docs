@@ -1,0 +1,57 @@
+---
+title: GET /v1/models
+description: 列出可调用模型、能力标签与各模型可用的入口协议。
+---
+
+## 请求
+
+```bash
+curl https://api.unioapi.com/v1/models \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+## 响应（节选）
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.6-sol",
+      "object": "model",
+      "capabilities": ["tools", "vision"],
+      "protocols": ["openai"]
+    },
+    {
+      "id": "claude-sonnet-5",
+      "object": "model",
+      "capabilities": ["tools"],
+      "protocols": ["anthropic", "openai"]
+    }
+  ]
+}
+```
+
+## 字段语义
+
+- **列表范围**：返回全部已启用（enabled）的模型，**不按你当前请求所用的协议过滤**——
+  只绑定 Anthropic 渠道的模型也会出现在列表里。
+- **`protocols`**（扩展字段）：该模型当前实际可用的入口协议集合（升序去重）。
+  用它判断能否以当前协议调用该模型；该字段恒等于实际供给能力，不存在“声明支持但调不通”。
+- **`capabilities`**：模型能力标签的聚合。
+- 模型出现在列表中表示产品上架承诺，但**不保证此刻存在可执行候选**；调用时如遇
+  503 见[错误语义](/docs/api/errors)。
+
+## 能力过滤
+
+`?capability=` 对能力标签执行 AND 过滤，可重复传参：
+
+```bash
+curl "https://api.unioapi.com/v1/models?capability=tools&capability=vision" \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+## 计费说明
+
+本端点不产生调用计费，也不创建请求记录，但与其他 `/v1` 接口共享请求准入，
+高频轮询可能收到 429。

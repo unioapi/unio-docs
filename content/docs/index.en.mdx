@@ -1,0 +1,42 @@
+---
+title: Overview
+description: What UnioAPI is, and the three concepts you need to understand it.
+---
+
+UnioAPI is a unified model API service for AI teams: call many models through one API entry point,
+one API key, and the OpenAI-compatible or Anthropic-compatible protocols you already know.
+Protocol adaptation, routing, and failover are handled by the platform.
+
+## Three concepts
+
+### Model identifiers
+
+The `model` in your request is a Unio model identifier (for example `gpt-5.6-sol`), and the same
+identifier is echoed back in responses. How it maps to upstream models is not exposed.
+See [GET /v1/models](/en/docs/api/models) for the list of callable models.
+
+### Routes and candidates
+
+A single model may have multiple supply channels (candidates) inside the platform. The platform
+picks among them based on real-time health; when the current candidate cannot complete a request,
+it tries the next available candidate for the same model — **the requested model never changes**.
+
+### Protocol compatibility
+
+The platform serves each protocol in its native shape and does not translate one public protocol
+into another:
+
+| Protocol family | Endpoints | Notes |
+| --- | --- | --- |
+| OpenAI-compatible | `POST /v1/chat/completions`, `POST /v1/responses`, `GET /v1/models` | OpenAI request, response, and streaming shapes |
+| Anthropic-compatible | `POST /v1/messages` | Anthropic request, response, and named SSE events |
+
+Brand names only indicate the compatible protocol family and do not imply official partnership
+or endorsement.
+
+## Start here
+
+- [5-minute quickstart](/en/docs/get-started/quickstart): get a key, change one base_url, make your first call.
+- [Client setup](/en/docs/clients/claude-code): step-by-step for Claude Code, Codex, Cursor, TRAE, and OpenCode.
+- [API reference](/en/docs/api/authentication): endpoints, parameters, streaming, and error semantics.
+- [Platform guides](/en/docs/guides/billing): billing basics, common invoice questions, and rate limits.

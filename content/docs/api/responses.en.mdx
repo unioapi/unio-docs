@@ -1,0 +1,60 @@
+---
+title: POST /v1/responses
+description: OpenAI-compatible Responses API, including passthrough vs bridge boundaries.
+---
+
+## Request
+
+```bash
+curl https://api.unioapi.com/v1/responses \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "input": "Hello",
+    "stream": false
+  }'
+```
+
+`service_tier` rules match [Chat Completions](/en/docs/api/chat-completions).
+
+## Passthrough vs bridge
+
+The platform picks one of two paths per candidate capability, transparently:
+
+| Path | Behavior |
+| --- | --- |
+| Native passthrough | Preserves the original Responses JSON and named SSE; only the Unio model echo is restored |
+| Responses-to-Chat bridge | Synthesizes the subset of fields Chat can express, token usage, and a minimal event family |
+
+Fields that cannot be safely degraded may be dropped on the bridged path; `multi_agent` is
+explicitly rejected on bridged candidates. Validate on your target model if field completeness
+matters.
+
+## Explicitly unsupported
+
+| Capability | Behavior |
+| --- | --- |
+| `background: true` | Stable 400 with code `unsupported_background` |
+| Server-side stateful operations (retrieve, delete, input items, cancel) | Stable 501 with code `unsupported_origin_stateless` |
+| `service_tier` values `flex` / `batch` | 400 (Flex processing and the Batch API are out of scope) |
+
+## Auxiliary endpoints
+
+### POST /v1/responses/compact
+
+Context compaction. The native path returns the upstream success JSON with only the top-level
+model echo rewritten; the summary fallback returns just an `output` array (0 or 1 assistant
+message). Neither streams.
+
+### POST /v1/responses/input_tokens
+
+Local input-token estimation: picks a tokenizer from the candidate plan and computes locally —
+**no upstream call, no billing, no request record**. Results are approximate and not guaranteed
+to match any upstream tokenizer or final settled usage.
+
+## Streaming
+
+Native passthrough forwards upstream named SSE; the bridge synthesizes a minimal event family
+with monotonically increasing `sequence_number`. Neither appends `[DONE]`.
+See [Streaming](/en/docs/sdk/streaming).

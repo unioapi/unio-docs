@@ -1,0 +1,62 @@
+---
+title: Streaming
+description: SSE event shapes and end-of-stream markers for the three endpoints.
+---
+
+Set `"stream": true` in the request body to enable streaming. The three endpoints use
+different event shapes:
+
+## Chat Completions
+
+Data-only SSE with chat chunks, an optional usage tail, and a `[DONE]` terminator:
+
+```text
+data: {"id":"...","choices":[{"delta":{"content":"He"}}],...}
+data: {"id":"...","choices":[{"delta":{"content":"llo"}}],...}
+data: [DONE]
+```
+
+## Responses
+
+Named SSE events (`response.created`, `response.output_text.delta`, `response.completed`, …),
+**no `[DONE]`**; the stream ends with a terminal Response event. On the bridged path a minimal
+supported event family is synthesized, `sequence_number` increases monotonically, and token
+usage appears only in the terminal event.
+
+## Messages (Anthropic-compatible)
+
+Anthropic named events ending with `message_stop`:
+
+```text
+event: message_start
+data: {...}
+
+event: content_block_delta
+data: {"delta":{"type":"text_delta","text":"Hello"}}
+
+event: message_stop
+data: {}
+```
+
+## Interruption semantics
+
+- Failure **before the first client-visible event**: a normal protocol error is returned;
+  the platform may already have retried across same-protocol candidates.
+- Failure **after the first client-visible event**: the HTTP status no longer changes; the
+  stream ends with a protocol-native error event and a successful terminal state is never faked.
+- If you did not receive `[DONE]` / `message_stop` / a terminal Response event, treat the
+  stream as incomplete.
+
+## Python example
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Hello"}],
+    stream=True,
+)
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="", flush=True)
+```

@@ -1,0 +1,56 @@
+---
+title: Python
+description: Keep the official openai or anthropic SDK; change only the base URL.
+---
+
+## openai SDK
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.unioapi.com/v1",
+    api_key="<UNIO_API_KEY>",
+)
+
+resp = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(resp.choices[0].message.content)
+```
+
+The Responses API works too:
+
+```python
+resp = client.responses.create(
+    model="gpt-5.6-sol",
+    input="Hello",
+)
+print(resp.output_text)
+```
+
+## anthropic SDK
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.unioapi.com",
+    api_key="<UNIO_API_KEY>",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(message.content[0].text)
+```
+
+## Notes
+
+- The openai SDK `base_url` includes `/v1`; the anthropic SDK `base_url` does not
+  (the SDK appends `/v1/messages` itself).
+- Read keys from environment variables: `api_key=os.environ["UNIO_API_KEY"]`.
+- For streaming, see [Streaming](/en/docs/sdk/streaming).

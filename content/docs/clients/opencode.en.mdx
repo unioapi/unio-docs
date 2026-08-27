@@ -1,0 +1,64 @@
+---
+title: OpenCode
+description: Add a custom provider in opencode.json.
+---
+
+## 1. Install OpenCode
+
+Skip to section 2 if it is already installed. Follow the
+[official OpenCode docs](https://opencode.ai/docs); a common way:
+
+```bash
+npm install -g opencode-ai
+opencode --version
+```
+
+## 2. Configure
+
+Create `opencode.json` in your project root (or edit the global config at
+`~/.config/opencode/opencode.json`):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "unioapi": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "UnioAPI",
+      "options": {
+        "baseURL": "https://api.unioapi.com/v1",
+        "apiKey": "{env:UNIO_API_KEY}"
+      },
+      "models": {
+        "gpt-5.6-sol": { "name": "GPT-5.6 Sol" },
+        "claude-sonnet-5": { "name": "Claude Sonnet 5" }
+      }
+    }
+  }
+}
+```
+
+Export the key and launch; the registered models appear in the model picker:
+
+```bash
+export UNIO_API_KEY="sk-unio-..."
+opencode
+```
+
+## Notes
+
+- `npm` is fixed to `@ai-sdk/openai-compatible`, for `/v1/chat/completions`-style services.
+- `baseURL` should end at `/v1` — do **not** append `/chat/completions`; the SDK adds the
+  operation path.
+- Keys under `models` must exactly match the model IDs the platform accepts; see
+  [GET /v1/models](/en/docs/api/models).
+- The `{env:UNIO_API_KEY}` syntax reads the key from an environment variable, keeping it out
+  of the config file.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| NotFoundError / requests not hitting the custom endpoint | Confirm the provider id matches the model prefix you selected; upgrade OpenCode to the latest version. |
+| 401 authentication failed | Confirm the environment variable is exported and the `{env:...}` name is spelled correctly. |
+| Model missing from the picker | It is not registered under `models`; add it and restart. |

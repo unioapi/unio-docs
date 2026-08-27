@@ -1,0 +1,56 @@
+---
+title: POST /v1/responses
+description: OpenAI-compatible Responses 主操作，含直传与桥接边界。
+---
+
+## 请求
+
+```bash
+curl https://api.unioapi.com/v1/responses \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "input": "Hello",
+    "stream": false
+  }'
+```
+
+`service_tier` 档位规则与 [Chat Completions](/docs/api/chat-completions) 相同。
+
+## 直传与桥接
+
+平台按候选能力自动选择两条路径之一，对调用方透明：
+
+| 路径 | 行为 |
+| --- | --- |
+| 原生直传 | 保留原始 Responses JSON 与命名 SSE，仅恢复 Unio 模型标识回显 |
+| Responses-to-Chat 桥接 | 合成 Chat 能表达的字段子集、token usage 与最小事件族 |
+
+桥接路径上无法安全降级的字段可能被丢弃；`multi_agent` 在桥接候选上明确拒绝。
+对字段完整性敏感的调用建议先在目标模型上验证。
+
+## 明确不支持的能力
+
+| 能力 | 行为 |
+| --- | --- |
+| `background: true` | 稳定返回 400，错误码 `unsupported_background` |
+| 服务端状态操作（查询、删除、输入项、取消） | 稳定返回 501，错误码 `unsupported_origin_stateless` |
+| `service_tier` 取值 `flex` / `batch` | 返回 400（Flex processing 与 Batch API 不在服务范围） |
+
+## 辅助端点
+
+### POST /v1/responses/compact
+
+上下文压缩。原生路径回传上游成功 JSON 并仅改写顶层模型回显；摘要降级路径只返回
+`output` 数组（0 或 1 个 assistant message）。两者均非 SSE。
+
+### POST /v1/responses/input_tokens
+
+本地输入 token 估算：按候选计划选择 tokenizer 在本地计算，**不调用上游、不产生计费、
+不创建请求记录**。结果为近似值，不承诺与任一上游 tokenizer 或最终结算 usage 一致。
+
+## 流式
+
+原生直传转发上游命名 SSE，桥接合成最小事件族并保证 `sequence_number` 单调递增；
+两者都**不追加 `[DONE]`**。详见[流式调用](/docs/sdk/streaming)。

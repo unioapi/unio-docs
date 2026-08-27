@@ -1,0 +1,49 @@
+---
+title: Authentication
+description: The two ways to submit an API key, precedence, and the failure envelope.
+---
+
+All protected `/v1` endpoints share one credential extraction rule.
+
+## Submission styles
+
+| Style | Header | Convention |
+| --- | --- | --- |
+| Style 1 | `x-api-key: <UNIO_API_KEY>` | Anthropic protocol |
+| Style 2 | `Authorization: Bearer <UNIO_API_KEY>` | OpenAI protocol |
+
+Both styles are accepted on **every** entry protocol: the OpenAI endpoints also accept
+`x-api-key`, and the Messages endpoint also accepts Bearer. When both headers are present,
+**`x-api-key` wins**.
+
+The `Bearer` prefix in the `Authorization` header is case-sensitive.
+
+## Authentication failures
+
+Missing, invalid, revoked, disabled, or expired keys are rejected before protocol handling,
+returning `401`. Regardless of entry protocol, authentication failures currently use the
+generic OpenAI error envelope:
+
+```json
+{
+  "error": {
+    "message": "...",
+    "type": "...",
+    "param": null,
+    "code": "..."
+  }
+}
+```
+
+Note: authentication failures on `/v1/messages` also use the shape above, not the Anthropic
+native envelope.
+
+## Request identifiers
+
+Every response carries an `X-Request-ID` header — the trace identifier for the request:
+
+- You may send your own `X-Request-ID` (up to 128 chars; ASCII letters, digits, and `. _ - :`
+  only). The platform adopts it verbatim across all logs for the request;
+- Missing or non-conforming values are replaced with a generated one.
+
+Include it when troubleshooting or filing a support ticket.

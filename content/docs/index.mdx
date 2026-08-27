@@ -1,0 +1,37 @@
+---
+title: 概览
+description: UnioAPI 是什么，以及理解它只需要的三个概念。
+---
+
+UnioAPI 是面向 AI 应用团队的统一模型 API 接入服务：使用一个 API 入口、一把 API Key 和你熟悉的
+OpenAI-compatible 或 Anthropic-compatible 协议调用多种模型，协议适配、线路调度和失败切换由平台完成。
+
+## 三个概念
+
+### 模型标识
+
+请求中的 `model` 是 Unio 模型标识（例如 `gpt-5.6-sol`），响应中回显的也是同一标识。
+平台内部如何映射到上游模型不对外暴露。可调用的模型清单见 [GET /v1/models](/docs/api/models)。
+
+### 线路与候选
+
+同一个模型在平台内部可能有多条供给渠道（候选）。平台按请求时的健康状况在候选之间选择；
+当前候选无法完成请求时，会在线路内尝试同模型的下一个可用候选，**请求的模型保持不变**。
+
+### 协议兼容
+
+平台以协议原生形式提供服务，不在公开层面做协议互转：
+
+| 协议族 | 端点 | 说明 |
+| --- | --- | --- |
+| OpenAI-compatible | `POST /v1/chat/completions`、`POST /v1/responses`、`GET /v1/models` | 使用 OpenAI 的请求、响应与流式事件形状 |
+| Anthropic-compatible | `POST /v1/messages` | 使用 Anthropic 的请求、响应与命名 SSE 事件 |
+
+品牌名称仅用于指明兼容的协议族，不代表官方合作或背书。
+
+## 从这里开始
+
+- [5 分钟快速开始](/docs/get-started/quickstart)：拿到 Key、改一行 base_url、发出第一次调用。
+- [客户端接入](/docs/clients/claude-code)：Claude Code、Codex、Cursor、TRAE、OpenCode 的逐步配置。
+- [API 参考](/docs/api/authentication)：端点、参数、流式与错误语义的完整边界。
+- [平台指南](/docs/guides/billing)：计费口径、账单常见疑问与限流处理。

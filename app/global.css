@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+/* 与 unio-website 对齐：中性色基底 + 珊瑚色强调。 */
+:root {
+  --color-fd-primary: #e05a49;
+}
+
+.dark {
+  --color-fd-primary: #f17463;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* 侧栏底部：语言切换与主题按钮合并为一行（Fumadocs 默认纵向两行）。 */
+#nd-sidebar .flex.flex-col.p-4.pt-2:has(.lucide-languages) {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+/* 按特征选中语言触发器：弹层打开时 Base UI 会在其前插入辅助元素，
+   不能依赖 :first-child，否则 flex 布局塌陷。 */
+#nd-sidebar .flex.flex-col.p-4.pt-2 > button:has(.lucide-languages) {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* 主题条左侧没有图标链接时，主题按钮自带的分隔边框成为孤立竖线，去掉。 */
+#nd-sidebar .flex.flex-col.p-4.pt-2 [data-theme-toggle] {
+  border-inline-start-width: 0;
+}

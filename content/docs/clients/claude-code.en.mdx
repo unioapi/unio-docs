@@ -1,0 +1,82 @@
+---
+title: Claude Code
+description: From fresh install to UnioAPI, on macOS / Linux / Windows.
+---
+
+Claude Code is a terminal AI coding assistant. It connects to UnioAPI over the
+Anthropic-compatible protocol via `POST /v1/messages`.
+
+## 1. Install Claude Code
+
+Skip to section 2 if it is already installed.
+
+Install Node.js (18 or newer) first, then run:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+Verify:
+
+```bash
+claude --version
+```
+
+Output like `x.x.xxx (Claude Code)` means the install succeeded.
+
+## 2. Connect to UnioAPI
+
+Create an API key in the [console](https://console.unioapi.com) first.
+
+### macOS / Linux
+
+Write the environment variables into your shell config (auto-detects zsh or bash):
+
+```bash
+SHELL_RC="$HOME/.zshrc"; case "$SHELL" in *bash*) SHELL_RC="$HOME/.bashrc";; esac
+cat >> "$SHELL_RC" <<'EOF'
+export ANTHROPIC_BASE_URL=https://api.unioapi.com
+export ANTHROPIC_AUTH_TOKEN="your UnioAPI key"
+EOF
+source "$SHELL_RC"
+```
+
+### Windows (PowerShell)
+
+`setx` writes user-level environment variables; **reopen the terminal** afterwards:
+
+```powershell
+setx ANTHROPIC_BASE_URL "https://api.unioapi.com"
+setx ANTHROPIC_AUTH_TOKEN "your UnioAPI key"
+```
+
+### Launch
+
+```bash
+claude
+```
+
+If the chat starts and replies normally, you are connected.
+
+## 3. Optional: pin models
+
+Claude Code supports environment variables that pin the model per tier. Use Unio model
+identifiers (full list: [GET /v1/models](/en/docs/api/models)):
+
+```bash
+export ANTHROPIC_MODEL=claude-sonnet-5
+export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-5
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-haiku-4.5
+```
+
+Without these, Claude Code uses its default model names; if a default model is not available
+on UnioAPI you will get a 404 — pin an available model as shown above.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| 401 authentication failed | `echo $ANTHROPIC_AUTH_TOKEN` to confirm the variable is live in this session; confirm the key is not revoked. On Windows, reopen the terminal after `setx`. |
+| 404 model not found | The default model is not available on the platform; pin an available one (section 3). |
+| 503 no available route | The model is listed but has no executable candidate right now; retry later. See [Errors](/en/docs/api/errors). |
+| Wrong base URL | `ANTHROPIC_BASE_URL` must **not** include `/v1`; Claude Code appends `/v1/messages` itself. |

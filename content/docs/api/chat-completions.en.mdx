@@ -1,0 +1,61 @@
+---
+title: POST /v1/chat/completions
+description: OpenAI-compatible chat completions, non-streaming and SSE.
+---
+
+## Request
+
+```bash
+curl https://api.unioapi.com/v1/chat/completions \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "stream": false
+  }'
+```
+
+## Key parameters
+
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `model` | string, required | Unio model identifier (see [GET /v1/models](/en/docs/api/models)); echoed in responses |
+| `messages` | array, required | OpenAI-shaped message list |
+| `stream` | boolean | SSE output ending with `[DONE]`; see [Streaming](/en/docs/sdk/streaming) |
+| `service_tier` | string | See the tier table below; invalid values return 400 |
+
+Other OpenAI protocol fields are validated structurally and passed through or adapted;
+valid fields that the current upstream cannot express may be safely degraded.
+
+## service_tier tiers
+
+| Client value | Meaning |
+| --- | --- |
+| absent, `auto`, `default` | Standard tier |
+| `fast`, `priority` | Requests the Fast tier; if the channel does not support it, serves Standard and settles by the actual tier |
+| `standard`, `flex`, `batch`, anything else | Rejected with 400, param pointing at `service_tier` |
+
+Successful responses keep the upstream's actual `service_tier`.
+
+## Response (excerpt)
+
+```json
+{
+  "model": "gpt-5.6-sol",
+  "choices": [
+    {
+      "message": { "role": "assistant", "content": "..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 8, "completion_tokens": 21 },
+  "service_tier": "default"
+}
+```
+
+## Limits
+
+- Request bodies are capped at 256 MiB (413 beyond); `Content-Type` must be
+  `application/json` or absent (415 otherwise).
+- Error semantics: see [Errors](/en/docs/api/errors).

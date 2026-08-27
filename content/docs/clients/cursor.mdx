@@ -1,0 +1,33 @@
+---
+title: Cursor
+description: 在设置中覆盖 OpenAI Base URL。
+---
+
+## 配置步骤
+
+1. 打开 Cursor Settings → Models → API Keys。
+2. 在 **OpenAI API Key** 中填入你的 UnioAPI Key，并启用该项。
+3. 开启 **Override OpenAI Base URL**，填入：
+
+   ```text
+   https://api.unioapi.com/v1
+   ```
+
+4. 回到 Models 列表，点击 **Add model** 添加模型，名称填平台上架的模型标识
+   （如 `gpt-5.6-sol`，完整清单见 [GET /v1/models](/docs/api/models)）。
+5. 在聊天窗口选中该模型发送一条消息，能正常回复即接入成功。
+
+## 注意事项
+
+- **Override 开关全局生效**：开启后，所有 OpenAI 系模型请求（包括从内置列表选择的模型）都会发往
+  该端点。需要临时使用 Cursor 官方模型时，请先关闭该开关。
+- Cursor 在部分场景会发送 Responses API 请求；UnioAPI 同时提供
+  `POST /v1/chat/completions` 与 `POST /v1/responses`，两类请求均可处理。
+
+## 排障
+
+| 现象 | 排查 |
+| --- | --- |
+| 网络错误 / TLS 断开 | 尝试 Cursor Settings → Network → HTTP Compatibility Mode 切换到 HTTP/1.1。 |
+| 401 认证失败 | 确认 API Key 已启用且未撤销。 |
+| 模型响应来自错误的服务方 | 检查 Override 开关状态——它决定请求发往 UnioAPI 还是 Cursor 官方。 |

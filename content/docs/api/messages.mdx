@@ -1,0 +1,47 @@
+---
+title: POST /v1/messages
+description: Anthropic-compatible 消息生成，支持非流式与命名 SSE。
+---
+
+## 请求
+
+```bash
+curl https://api.unioapi.com/v1/messages \
+  -H "x-api-key: $UNIO_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+## 关键参数
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `model` | string，必填 | Unio 模型标识，响应回显同一标识 |
+| `max_tokens` | integer，必填 | Anthropic 协议要求的输出上限 |
+| `messages` | array，必填 | Anthropic 形状的消息列表 |
+| `stream` | boolean | 开启命名 SSE 事件流，以 `message_stop` 结束 |
+
+请求需携带 `anthropic-version` 头；字段按 Anthropic 协议结构校验。
+
+## 响应（节选）
+
+```json
+{
+  "model": "claude-sonnet-5",
+  "role": "assistant",
+  "content": [{ "type": "text", "text": "..." }],
+  "stop_reason": "end_turn",
+  "usage": { "input_tokens": 10, "output_tokens": 25 }
+}
+```
+
+## 错误信封说明
+
+进入协议处理后的常规错误使用 Anthropic 原生错误形状；但**认证失败**发生在协议处理之前，
+当前返回 OpenAI 通用信封（见[认证](/docs/api/authentication)）。完整错误码见
+[错误语义](/docs/api/errors)。

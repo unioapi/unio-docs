@@ -1,0 +1,34 @@
+---
+title: Choose a Protocol
+description: When to use OpenAI-compatible vs Anthropic-compatible, and the boundaries.
+---
+
+UnioAPI serves each protocol natively: whichever protocol you choose, you use that protocol's
+request, response, streaming events, and error envelope. The platform does not translate one
+public protocol shape into another.
+
+## Endpoint overview
+
+| Protocol family | Endpoint | Purpose |
+| --- | --- | --- |
+| OpenAI-compatible | `POST /v1/chat/completions` | Chat completions, non-streaming and SSE |
+| OpenAI-compatible | `POST /v1/responses` | Responses API, non-streaming and SSE |
+| OpenAI-compatible | `GET /v1/models` | List callable models and capability tags |
+| Anthropic-compatible | `POST /v1/messages` | Message generation, non-streaming and named SSE |
+
+## How to choose
+
+- **Keeping an OpenAI SDK or OpenAI-compatible tool** (Codex, Cursor, TRAE, OpenCode, etc.):
+  use OpenAI-compatible with base URL `https://api.unioapi.com/v1`.
+- **Keeping an Anthropic SDK or Claude Code**: use Anthropic-compatible with base URL
+  `https://api.unioapi.com`, and send the `anthropic-version` header.
+- One API key works across both protocols. Whether a model is callable over a protocol depends
+  on the protocol set of its currently available channels — see the `protocols` field of
+  [GET /v1/models](/en/docs/api/models).
+
+## Boundaries
+
+- Brand names only indicate the compatible protocol family; they do not imply official
+  partnership, endorsement, or an upstream provider list.
+- Server-side stateful Responses operations (retrieve, delete, cancel, etc.) are out of scope
+  and return `501` — see [POST /v1/responses](/en/docs/api/responses).

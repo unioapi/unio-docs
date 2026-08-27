@@ -1,0 +1,65 @@
+---
+title: Billing & Usage
+description: How usage-based billing works, and the most common invoice questions.
+---
+
+## Billing basics
+
+- Usage-based: input and output tokens are priced separately per model; see
+  [Models & Pricing](https://unioapi.com/models) on the website.
+- Every real model call produces one request record; invoices are based on request records.
+- Prices move with upstream costs; the console invoice is authoritative.
+
+## Common questions
+
+### I sent one message — why are there multiple billed requests?
+
+One operation in an agent tool is often several real model calls behind the scenes:
+understanding the task, reading files, planning edits, calling again after tool execution…
+Some clients also retry or split long work. You see one operation; billing records every call
+that actually happened.
+
+### I requested the Fast tier — why was it billed as Standard?
+
+Fast (`service_tier: "fast"` / `"priority"`) is a processing and billing tier, not a separate
+model. Standard and Fast have independent prices, and settlement follows **the actual tier
+returned in the same successful response**: if you requested Fast but the upstream served
+`default`, the request is billed at Standard. The `service_tier` field in the response shows
+the actual tier.
+
+### Are failed or retried requests billed?
+
+It depends on whether the upstream actually consumed tokens:
+
+- Requests rejected before reaching a model (401, 402, 404, 429, or 400 validation) consume
+  nothing;
+- Interrupted streams settle by the usage that actually occurred — the invoice's usage detail
+  is authoritative.
+
+### Why is my usage higher than expected?
+
+Common causes: a higher-priced model; hidden calls made by the client around the visible
+action; more output (including reasoning) tokens than expected; longer sessions carrying more
+context.
+
+To reduce usage:
+
+- Start a new session once old context is no longer needed;
+- Use smaller models for simple tasks (e.g. `gpt-5.6-luna`, `claude-haiku-4.5`);
+- Avoid letting agents read the whole project unnecessarily.
+
+### Balance-related status codes
+
+| Status | Meaning | Action |
+| --- | --- | --- |
+| 402 | Book balance exhausted or spending cap reached | Top up in the console |
+| 429 (with `Retry-After: 1`) | Balance positive but temporarily frozen by in-flight requests | Retry shortly |
+
+## When to contact support
+
+Contact [support@unioapi.com](mailto:support@unioapi.com) with the request time, model ID, and
+the `X-Request-ID` response header if:
+
+- You see requests you did not make;
+- A billed model clearly differs from what you configured;
+- The actual deduction is far from the usage detail.

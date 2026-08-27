@@ -1,0 +1,39 @@
+---
+title: Rate Limits
+description: The three request-level limits, how they are counted, and handling 429.
+---
+
+## Three limits
+
+The platform enforces three per-user limits at the request entry:
+
+| Limit | Meaning |
+| --- | --- |
+| RPM | Requests per minute |
+| RPD | Requests per day |
+| Concurrency | Requests in flight at the same time |
+
+Exact quotas are shown in the console.
+
+## How counting works
+
+- **Per user account, not per API key**: all keys under one account share the same RPM, RPD,
+  and concurrency quota — creating more keys does not multiply it.
+- **No TPM cap**: the platform does not limit token throughput; upstream capacity shortages are
+  handled internally by routing and failover, not charged against your quota.
+- Internal failover retries do not consume extra entry quota.
+
+## Handling 429
+
+There are two sources of 429 with different handling:
+
+| Source | Signature | Action |
+| --- | --- | --- |
+| RPM / RPD / concurrency limit | Regular rate limiting | Retry with exponential backoff; persistent 429 means you exceed the quota |
+| Balance temporarily frozen | Comes with `Retry-After: 1` | Book balance is positive; retry shortly — see [Billing & Usage](/en/docs/guides/billing) |
+
+Retry guidance: honor the `Retry-After` header; otherwise back off exponentially starting at
+1 second, and cap concurrency for batch jobs.
+
+Auxiliary endpoints such as `GET /v1/models` incur no call billing but share request admission
+with other `/v1` endpoints — aggressive polling may also get 429.

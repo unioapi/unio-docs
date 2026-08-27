@@ -1,0 +1,62 @@
+---
+title: curl
+description: 四个公开端点的最小调用示例。
+---
+
+以下示例假设已导出 `UNIO_API_KEY` 环境变量。
+
+## Chat Completions
+
+```bash
+curl https://api.unioapi.com/v1/chat/completions \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+## Responses
+
+```bash
+curl https://api.unioapi.com/v1/responses \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "input": "Hello"
+  }'
+```
+
+## Messages（Anthropic-compatible）
+
+```bash
+curl https://api.unioapi.com/v1/messages \
+  -H "x-api-key: $UNIO_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+## Models
+
+```bash
+curl https://api.unioapi.com/v1/models \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+按能力过滤（多个能力为 AND 关系）：
+
+```bash
+curl "https://api.unioapi.com/v1/models?capability=tools" \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+## 排障提示
+
+每个响应都带 `X-Request-ID` 头；联系支持时请附上该值，详见[错误语义](/docs/api/errors)。

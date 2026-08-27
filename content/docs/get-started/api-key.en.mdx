@@ -1,0 +1,30 @@
+---
+title: Get an API Key
+description: Create a key in the console, and the two equivalent authentication styles.
+---
+
+## Create a key
+
+1. Sign in to the [console](https://console.unioapi.com).
+2. Open the API Key page and create a new key.
+3. Copy and store it — the full key is shown only once at creation.
+
+## Two authentication headers
+
+All protected `/v1` endpoints share the same extraction rule; these two styles are equivalent:
+
+```bash
+# Style 1: x-api-key (Anthropic convention)
+curl https://api.unioapi.com/v1/models -H "x-api-key: $UNIO_API_KEY"
+
+# Style 2: Authorization Bearer (OpenAI convention)
+curl https://api.unioapi.com/v1/models -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+When both headers are present, `x-api-key` wins. See [Authentication](/en/docs/api/authentication).
+
+## Handling tips
+
+- Inject keys via environment variables; never commit them in plain text.
+- Split keys by purpose for easier auditing and rotation.
+- Revoke leaked or unused keys in the console; revocation takes effect immediately.

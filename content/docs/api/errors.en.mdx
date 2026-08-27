@@ -1,0 +1,39 @@
+---
+title: Errors
+description: Status code table, balance and rate-limit behavior, and the 404 vs 503 boundary.
+---
+
+## Status codes
+
+| Status | Trigger | Notes |
+| --- | --- | --- |
+| 400 | Invalid protocol structure, required fields, or union types; invalid `service_tier`; `background: true` | The latter uses code `unsupported_background` |
+| 401 | API key missing, invalid, revoked, disabled, or expired | Uses the generic OpenAI envelope; see [Authentication](/en/docs/api/authentication) |
+| 402 | Book balance exhausted or spending cap reached | OpenAI entries use code `insufficient_quota`; Anthropic entries return 402 `invalid_request_error` |
+| 404 | Model missing, disabled, or no channel can serve it over the current protocol | Indistinguishable from internal configuration; a product-eligibility rejection |
+| 413 | Request body over 256 MiB | Unrelated to model context windows |
+| 415 | `Content-Type` is not `application/json` and cannot be parsed | Absent Content-Type is accepted |
+| 429 | Request-level rate/concurrency limits; balance temporarily frozen by in-flight requests (with `Retry-After: 1`); aggregated upstream rate limits | Retry per `Retry-After` or with exponential backoff |
+| 501 | Server-side stateful Responses operations (retrieve, delete, cancel, …) | Code `unsupported_origin_stateless` |
+| 503 | Model enabled but no executable candidate (`routing_no_available_channel`); admission or infrastructure unavailable | Retry later |
+
+## Balance semantics of 402 vs 429
+
+- All currencies' book balance exhausted: immediate 402; no request record is created.
+- Book balance positive but the available amount is temporarily frozen by in-flight requests:
+  429 with `Retry-After: 1` — just retry shortly.
+
+## The 404 vs 503 boundary
+
+- **404**: the model is not listed, disabled, or has no serving channel for the current entry
+  protocol — product eligibility not met; no request record.
+- **503**: the model is listed (product commitment exists) but has no executable candidate right
+  now — a service failure, already audited by the platform; retry later or contact support.
+
+## Troubleshooting flow
+
+1. Record the `X-Request-ID` response header (the request's trace identifier).
+2. Match the table above: for 4xx check the request and key first; for 429/503 follow the
+   retry guidance.
+3. If you cannot resolve it, contact [support@unioapi.com](mailto:support@unioapi.com) with the
+   `X-Request-ID`, timestamp, and model ID.

@@ -1,0 +1,37 @@
+---
+title: 错误语义
+description: 状态码总表、余额与限流行为、404 与 503 的边界。
+---
+
+## 状态码总表
+
+| 状态码 | 触发场景 | 说明 |
+| --- | --- | --- |
+| 400 | 协议结构、必填字段或联合类型不合法；`service_tier` 非法值；`background: true` | 后者错误码为 `unsupported_background` |
+| 401 | API Key 缺失、无效、已撤销、禁用或过期 | 统一使用 OpenAI 通用信封，见[认证](/docs/api/authentication) |
+| 402 | 账面余额耗尽或消费上限已达 | OpenAI 入口错误码 `insufficient_quota`；Anthropic 入口为 402 `invalid_request_error` |
+| 404 | 模型不存在、已停用，或当前协议无任何可服务渠道 | 与内部配置原因不可区分，属产品资格拒绝 |
+| 413 | 请求体超过 256 MiB | 与模型上下文窗口无关 |
+| 415 | `Content-Type` 不是 `application/json` 且无法解析 | 缺省 Content-Type 可接受 |
+| 429 | 请求级限流或并发限制；余额被在途请求全部冻结（带 `Retry-After: 1`）；上游 rate limit 汇聚 | 按 `Retry-After` 或指数退避重试 |
+| 501 | Responses 服务端状态操作（查询、删除、取消等） | 错误码 `unsupported_origin_stateless` |
+| 503 | 模型已启用但无可执行候选（`routing_no_available_channel`）；准入或基础设施不可用 | 可稍后重试 |
+
+## 402 与 429 的余额语义
+
+- 所有币种账面余额均已耗尽：直接 402，不创建请求记录。
+- 账面余额为正、但可用额度被在途请求临时冻结：429 且 `Retry-After: 1`，稍后重试即可。
+
+## 404 与 503 的边界
+
+- **404**：模型未上架、已停用，或当前入口协议没有任何可服务渠道——产品资格不满足，
+  不创建请求记录。
+- **503**：模型已上架（产品承诺存在），但此刻没有可执行候选——属于服务失败，
+  平台已记录审计，稍后重试或联系支持。
+
+## 排障流程
+
+1. 记录响应头 `X-Request-ID`（即本次请求的追踪标识）。
+2. 对照上表确认场景：4xx 优先检查请求与密钥，429/503 按重试策略处理。
+3. 无法自行定位时，携带 `X-Request-ID`、时间点与模型 ID 联系支持：
+   [support@unioapi.com](mailto:support@unioapi.com)。

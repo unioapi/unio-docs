@@ -1,0 +1,81 @@
+---
+title: 5-Minute Quickstart
+description: Get an API key, point at the unified entry, and make your first call.
+---
+
+## 1. Get an API Key
+
+Create an API key in the [console](https://console.unioapi.com). One key covers every model
+on your route.
+
+```bash
+export UNIO_API_KEY="sk-unio-..."
+```
+
+The key is shown in full only once — store it safely and never commit it to a repository.
+
+## 2. Point at the unified entry
+
+Change the base URL of your existing code or tool to:
+
+```text
+https://api.unioapi.com
+```
+
+- OpenAI-compatible clients usually take `https://api.unioapi.com/v1`;
+- Anthropic-compatible clients (such as Claude Code) take `https://api.unioapi.com`.
+
+Request shapes, SDKs, and calling habits stay the same.
+
+## 3. Make your first call
+
+OpenAI-compatible (Chat Completions):
+
+```bash
+curl https://api.unioapi.com/v1/chat/completions \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+Anthropic-compatible (Messages):
+
+```bash
+curl https://api.unioapi.com/v1/messages \
+  -H "x-api-key: $UNIO_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+A 200 response means you are connected. The `model` field echoes the Unio model identifier
+you requested:
+
+```json
+{
+  "object": "chat.completion",
+  "model": "gpt-5.6-sol",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "Hello! ..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 8, "completion_tokens": 12, "total_tokens": 20 }
+}
+```
+
+## Next steps
+
+- Use it in coding tools: [Claude Code](/en/docs/clients/claude-code), [Codex](/en/docs/clients/codex), [Cursor](/en/docs/clients/cursor)
+- See callable models: [GET /v1/models](/en/docs/api/models)
+- Learn streaming: [Streaming](/en/docs/sdk/streaming)
+- Understand invoices and limits: [Billing & Usage](/en/docs/guides/billing), [Rate Limits](/en/docs/guides/rate-limits)

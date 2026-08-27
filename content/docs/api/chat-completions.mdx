@@ -1,0 +1,59 @@
+---
+title: POST /v1/chat/completions
+description: OpenAI-compatible 对话补全，支持非流式与 SSE。
+---
+
+## 请求
+
+```bash
+curl https://api.unioapi.com/v1/chat/completions \
+  -H "Authorization: Bearer $UNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.6-sol",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "stream": false
+  }'
+```
+
+## 关键参数
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `model` | string，必填 | Unio 模型标识（见 [GET /v1/models](/docs/api/models)），响应回显同一标识 |
+| `messages` | array，必填 | OpenAI 形状的消息列表 |
+| `stream` | boolean | 开启 SSE 输出，以 `[DONE]` 结束，见[流式调用](/docs/sdk/streaming) |
+| `service_tier` | string | 见下方档位表；非法值返回 400 |
+
+其余 OpenAI 协议字段按协议结构校验后透传或适配；无法被当前上游表达的合法字段可能被安全降级。
+
+## service_tier 档位
+
+| 客户值 | 含义 |
+| --- | --- |
+| 未传、`auto`、`default` | Standard 档 |
+| `fast`、`priority` | 请求 Fast 档；渠道不支持时按 Standard 服务并按实际档位结算 |
+| `standard`、`flex`、`batch` 及其他值 | 不接受，返回 400，参数指向 `service_tier` |
+
+成功响应中的 `service_tier` 保留上游实际服务档位。
+
+## 响应（节选）
+
+```json
+{
+  "model": "gpt-5.6-sol",
+  "choices": [
+    {
+      "message": { "role": "assistant", "content": "..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 8, "completion_tokens": 21 },
+  "service_tier": "default"
+}
+```
+
+## 限制
+
+- 请求体上限 256 MiB，超出返回 413；`Content-Type` 需为 `application/json`（或缺省），否则 415。
+- 错误码语义见[错误语义](/docs/api/errors)。

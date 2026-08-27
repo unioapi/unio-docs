@@ -1,0 +1,60 @@
+---
+title: OpenCode
+description: 在 opencode.json 中添加自定义 provider。
+---
+
+## 1. 安装 OpenCode
+
+已安装的用户可直接跳到第 2 节。安装方式以
+[OpenCode 官方文档](https://opencode.ai/docs)为准，常用方式：
+
+```bash
+npm install -g opencode-ai
+opencode --version
+```
+
+## 2. 配置
+
+在项目根目录创建 `opencode.json`（或编辑全局配置 `~/.config/opencode/opencode.json`）：
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "unioapi": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "UnioAPI",
+      "options": {
+        "baseURL": "https://api.unioapi.com/v1",
+        "apiKey": "{env:UNIO_API_KEY}"
+      },
+      "models": {
+        "gpt-5.6-sol": { "name": "GPT-5.6 Sol" },
+        "claude-sonnet-5": { "name": "Claude Sonnet 5" }
+      }
+    }
+  }
+}
+```
+
+导出密钥后启动，在模型选择器中即可看到上面登记的模型：
+
+```bash
+export UNIO_API_KEY="sk-unio-..."
+opencode
+```
+
+## 说明
+
+- `npm` 固定为 `@ai-sdk/openai-compatible`，适用于 `/v1/chat/completions` 形态的服务。
+- `baseURL` 以 `/v1` 结尾即可，**不要**追加 `/chat/completions`——操作路径由 SDK 拼接。
+- `models` 的键必须与平台接受的模型 ID 完全一致，可用清单见 [GET /v1/models](/docs/api/models)。
+- `{env:UNIO_API_KEY}` 语法从环境变量读取密钥，避免明文写入配置。
+
+## 排障
+
+| 现象 | 排查 |
+| --- | --- |
+| NotFoundError / 请求未发往自定义端点 | 确认 provider id 与所选模型前缀一致；升级 OpenCode 到最新版本。 |
+| 401 认证失败 | 确认环境变量已导出，`{env:...}` 名称拼写正确。 |
+| 模型不在选择器中 | `models` 映射里没有登记该 ID，补充后重启。 |

@@ -1,0 +1,36 @@
+---
+title: TRAE
+description: 添加自定义模型，注意基础地址不要带 /v1。
+---
+
+## 配置步骤
+
+1. 打开 TRAE 设置 → 模型 → 添加自定义模型。
+2. **API 格式**选择「OpenAI Chat Completion 格式」。
+3. 保持「完整 URL」开关**关闭**，自定义请求地址填入：
+
+   ```text
+   https://api.unioapi.com
+   ```
+
+4. 填入模型 ID（如 `gpt-5.6-sol`，完整清单见 [GET /v1/models](/docs/api/models)）与 API 密钥。
+5. 保存时 TRAE 会调用接口校验密钥；通过后在模型列表选中该模型，发送一条消息验证。
+
+## 关键细节：路径拼接
+
+「完整 URL」开关关闭时，TRAE 会按所选 API 格式在基础地址后**自动拼接路径**：
+
+- OpenAI 格式拼接 `/v1/chat/completions`；
+- Anthropic 格式拼接 `/v1/messages`。
+
+因此基础地址**不要**携带 `/v1`，也不要以斜杠结尾，否则路径重复会得到 404。
+如果你更希望自己控制完整路径，可打开「完整 URL」开关并填写
+`https://api.unioapi.com/v1/chat/completions`。
+
+## 排障
+
+| 现象 | 排查 |
+| --- | --- |
+| 404 / Invalid URL | 基础地址带了 `/v1` 或末尾斜杠，按上文修正。 |
+| 校验失败 | 确认 API 格式与模型协议匹配；确认模型 ID 与 [GET /v1/models](/docs/api/models) 一致。 |
+| 500 内部错误 | 尝试切换 API 格式（模型走 OpenAI 协议时不要选 Anthropic 格式）。 |

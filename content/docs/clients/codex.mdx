@@ -1,0 +1,73 @@
+---
+title: Codex
+description: 从零安装到在 config.toml 中接入 UnioAPI，走 Responses API。
+---
+
+Codex 是 OpenAI 的终端编程助手，通过自定义 provider 连接 UnioAPI，
+请求走 `POST /v1/responses`。
+
+## 1. 安装 Codex CLI
+
+已安装的用户可直接跳到第 2 节。
+
+需要 Node.js（18 或更新版本）：
+
+```bash
+npm install -g @openai/codex
+codex --version
+```
+
+## 2. 写入 UnioAPI provider 配置
+
+编辑配置文件——macOS / Linux 位于 `~/.codex/config.toml`，
+Windows 位于 `%USERPROFILE%\.codex\config.toml`（文件不存在则新建）：
+
+```toml
+model = "gpt-5.6-sol"
+model_provider = "unioapi"
+
+[model_providers.unioapi]
+name = "UnioAPI"
+base_url = "https://api.unioapi.com/v1"
+env_key = "UNIO_API_KEY"
+wire_api = "responses"
+```
+
+三个要点：
+
+- `wire_api = "responses"`：自 2026 年 2 月起 Codex 仅支持 Responses 传输
+  （`wire_api = "chat"` 已移除，旧教程失效）。UnioAPI 提供 `POST /v1/responses`，可直接对接。
+- 顶层 `model_provider` 必须与 `[model_providers.<id>]` 的 id 一致；
+  `openai`、`ollama`、`lmstudio` 是保留 id，不能占用。
+- `env_key` 指向存放密钥的环境变量名，密钥不写入配置文件。
+
+## 3. 导出密钥并启动
+
+### macOS / Linux
+
+```bash
+SHELL_RC="$HOME/.zshrc"; case "$SHELL" in *bash*) SHELL_RC="$HOME/.bashrc";; esac
+echo 'export UNIO_API_KEY="你的 UnioAPI Key"' >> "$SHELL_RC"
+source "$SHELL_RC"
+codex
+```
+
+### Windows（PowerShell）
+
+```powershell
+setx UNIO_API_KEY "你的 UnioAPI Key"
+```
+
+重新打开终端后运行 `codex`。
+
+发送一条消息能正常回复即接入成功。切换模型时修改顶层 `model` 为
+[GET /v1/models](/docs/api/models) 中的任一 OpenAI 协议模型。
+
+## 排障
+
+| 现象 | 排查 |
+| --- | --- |
+| 启动报 provider 配置错误 | 检查 `wire_api` 是否为 `responses`；检查顶层 `model_provider` 与块 id 拼写一致。 |
+| 401 认证失败 | 确认 `UNIO_API_KEY` 已导出且与 `env_key` 名称一致；Windows 上 `setx` 后需重开终端。 |
+| 400 参数拒绝 | Codex 的 `background` 等能力不在服务范围，见 [POST /v1/responses](/docs/api/responses)。 |
+| 404 模型不存在 | 顶层 `model` 填的不是平台上架的模型标识。 |

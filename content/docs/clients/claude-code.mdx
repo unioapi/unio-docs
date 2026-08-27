@@ -1,0 +1,82 @@
+---
+title: Claude Code
+description: 从零安装到连接 UnioAPI，macOS / Linux / Windows 全平台步骤。
+---
+
+Claude Code 是运行在终端里的 AI 编程助手，通过 Anthropic-compatible 协议连接 UnioAPI，
+请求走 `POST /v1/messages`。
+
+## 1. 安装 Claude Code
+
+已安装的用户可直接跳到第 2 节。
+
+先安装 Node.js（18 或更新版本），然后在终端执行：
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+验证安装：
+
+```bash
+claude --version
+```
+
+输出形如 `x.x.xxx (Claude Code)` 即安装成功。
+
+## 2. 连接 UnioAPI
+
+先在[工作台](https://console.unioapi.com)创建 API Key。
+
+### macOS / Linux
+
+把环境变量写入 shell 配置文件（自动识别 zsh 或 bash）：
+
+```bash
+SHELL_RC="$HOME/.zshrc"; case "$SHELL" in *bash*) SHELL_RC="$HOME/.bashrc";; esac
+cat >> "$SHELL_RC" <<'EOF'
+export ANTHROPIC_BASE_URL=https://api.unioapi.com
+export ANTHROPIC_AUTH_TOKEN="你的 UnioAPI Key"
+EOF
+source "$SHELL_RC"
+```
+
+### Windows（PowerShell）
+
+用 `setx` 写入用户级环境变量，执行后**重新打开终端**生效：
+
+```powershell
+setx ANTHROPIC_BASE_URL "https://api.unioapi.com"
+setx ANTHROPIC_AUTH_TOKEN "你的 UnioAPI Key"
+```
+
+### 启动
+
+```bash
+claude
+```
+
+出现对话界面并能正常回复，即连接成功。
+
+## 3. 可选：指定模型
+
+Claude Code 支持用环境变量指定各档位使用的模型。填 UnioAPI 上架的模型标识
+（完整清单见 [GET /v1/models](/docs/api/models)）：
+
+```bash
+export ANTHROPIC_MODEL=claude-sonnet-5
+export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-5
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-haiku-4.5
+```
+
+不设置时使用 Claude Code 的默认模型名；如果该模型未在 UnioAPI 上架会得到 404，
+此时按上面的方式显式指定即可。
+
+## 排障
+
+| 现象 | 排查 |
+| --- | --- |
+| 401 认证失败 | `echo $ANTHROPIC_AUTH_TOKEN` 确认变量在当前会话已生效；确认密钥未撤销。Windows 上 `setx` 后需重开终端。 |
+| 404 模型不存在 | 默认模型未在平台上架，按第 3 节显式指定已上架模型。 |
+| 503 暂无可用线路 | 模型已上架但当前没有可执行候选，稍后重试；详见[错误语义](/docs/api/errors)。 |
+| 基础地址填错 | `ANTHROPIC_BASE_URL` **不要**带 `/v1`，Claude Code 会自行拼接 `/v1/messages`。 |

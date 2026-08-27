@@ -1,0 +1,58 @@
+---
+title: 流式调用
+description: 三类端点的 SSE 事件形态与结束标志。
+---
+
+在请求体中设置 `"stream": true` 即可开启流式输出。三类端点的事件形态不同：
+
+## Chat Completions
+
+data-only SSE，逐块输出 Chat chunk，可选 usage 尾包，以 `[DONE]` 结束：
+
+```text
+data: {"id":"...","choices":[{"delta":{"content":"你"}}],...}
+data: {"id":"...","choices":[{"delta":{"content":"好"}}],...}
+data: [DONE]
+```
+
+## Responses
+
+命名 SSE 事件（`response.created`、`response.output_text.delta`、`response.completed` 等），
+**不追加 `[DONE]`**；以终态 Response 事件结束。桥接路径会合成受支持的最小事件族，
+`sequence_number` 单调递增，token usage 只在终态中出现。
+
+## Messages（Anthropic-compatible）
+
+Anthropic 命名事件（`message_start`、`content_block_delta` 等），以 `message_stop` 结束：
+
+```text
+event: message_start
+data: {...}
+
+event: content_block_delta
+data: {"delta":{"type":"text_delta","text":"你好"}}
+
+event: message_stop
+data: {}
+```
+
+## 中断语义
+
+- **首个客户可见事件之前**失败：返回普通协议错误，平台可能已在同协议候选间自动重试。
+- **首个客户可见事件之后**失败：HTTP 状态不再改变，以协议原生的流式错误事件收尾，
+  不会伪造成功终态。
+- 未收到 `[DONE]` / `message_stop` / Responses 成功终态即代表流未正常完成，请按未完成处理。
+
+## Python 示例
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Hello"}],
+    stream=True,
+)
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="", flush=True)
+```
