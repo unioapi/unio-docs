@@ -1,11 +1,40 @@
 ---
 title: OpenCode
-description: Add a custom provider in opencode.json.
+description: Connect to UnioAPI with per-protocol providers, reasoning options, and variants.
 ---
 
-## 1. Install OpenCode
+OpenCode connects to custom services through the [AI SDK](https://ai-sdk.dev), and each
+provider entry speaks exactly one protocol. UnioAPI is a multi-protocol gateway where every
+model is listed under the **ingress protocol** it is actually supplied on — so the whole
+trick to the integration is: **split your models into provider entries by protocol**.
+Requests sent over the wrong protocol fail at the routing layer.
 
-Skip to section 2 if it is already installed. Follow the
+## 1. How it works: models follow protocols
+
+The `npm` field of a provider entry decides the protocol and request path it uses:
+
+| Model `protocols` contains | Set `npm` to | Actual request |
+| --- | --- | --- |
+| `openai` | `@ai-sdk/openai-compatible` | `POST /v1/chat/completions` |
+| `anthropic` | `@ai-sdk/anthropic` | `POST /v1/messages` |
+| `openai` (when Responses-only features are needed) | `@ai-sdk/openai` | `POST /v1/responses` |
+
+Check which protocols each model supports via the `protocols` field of
+[GET /v1/models](/en/docs/api/models):
+
+```bash
+curl https://api.unioapi.com/v1/models -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+**Symptom of a model in the wrong entry**: requests fail within milliseconds with a 503
+(`routing_no_available_channel`) — the gateway selects channels by ingress protocol, and a
+protocol mismatch leaves no executable candidate. For example, registering a Claude model
+that only has the `anthropic` protocol under an `@ai-sdk/openai-compatible` entry reproduces
+this error every time.
+
+## 2. Install OpenCode
+
+Skip to section 3 if it is already installed. Follow the
 [official OpenCode docs](https://opencode.ai/docs); a common way:
 
 ```bash
@@ -13,14 +42,17 @@ npm install -g opencode-ai
 opencode --version
 ```
 
-## 2. Configure
+## 3. Configure opencode.json
 
-Create `opencode.json` in your project root (or edit the global config at
-`~/.config/opencode/opencode.json`):
+First create an API key in the [console](https://console.unioapi.com). Then create
+`opencode.json` in your project root (or edit the global config at
+`~/.config/opencode/opencode.json`), with GPT and Claude models split into two provider
+entries:
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "unioapi-claude/claude-sonnet-5",
   "provider": {
     "unioapi": {
       "npm": "@ai-sdk/openai-compatible",
@@ -30,7 +62,17 @@ Create `opencode.json` in your project root (or edit the global config at
         "apiKey": "{env:UNIO_API_KEY}"
       },
       "models": {
-        "gpt-5.6-sol": { "name": "GPT-5.6 Sol" },
+        "gpt-5.6-sol": { "name": "GPT-5.6 Sol" }
+      }
+    },
+    "unioapi-claude": {
+      "npm": "@ai-sdk/anthropic",
+      "name": "UnioAPI Claude",
+      "options": {
+        "baseURL": "https://api.unioapi.com/v1",
+        "apiKey": "{env:UNIO_API_KEY}"
+      },
+      "models": {
         "claude-sonnet-5": { "name": "Claude Sonnet 5" }
       }
     }
@@ -38,27 +80,106 @@ Create `opencode.json` in your project root (or edit the global config at
 }
 ```
 
-Export the key and launch; the registered models appear in the model picker:
+Field notes:
+
+- **Provider ids** (`unioapi`, `unioapi-claude`) are arbitrary; they become the model name
+  prefix (e.g. `unioapi-claude/claude-sonnet-5`), which the top-level `model` key uses to set
+  the default model.
+- **`baseURL` always ends at `/v1`** — do not append `/chat/completions` or `/messages`; the
+  SDK adds the operation path. Both entries share the same `baseURL` and key.
+- **Keys under `models` must exactly match the platform model IDs**; see
+  [GET /v1/models](/en/docs/api/models) for the current list.
+- `{env:UNIO_API_KEY}` reads the key from an environment variable (`{file:~/.secrets/key}`
+  also works), keeping it out of the config file. The Anthropic entry sends it as the
+  `x-api-key` header; the platform accepts both auth header styles.
+
+Export the key and launch; both model groups appear under the `/models` command:
 
 ```bash
 export UNIO_API_KEY="sk-unio-..."
 opencode
 ```
 
+## 4. Optional parameters
+
+### Claude: extended thinking
+
+Enable it under the model's `options`; `budgetTokens` is the per-request thinking budget:
+
+```json
+"models": {
+  "claude-sonnet-5": {
+    "name": "Claude Sonnet 5",
+    "limit": { "context": 200000, "output": 64000 },
+    "options": {
+      "thinking": { "type": "enabled", "budgetTokens": 16000 }
+    }
+  }
+}
+```
+
+- `budgetTokens` must be smaller than the per-request output limit; thinking tokens are
+  billed at the reasoning output price.
+- **Declare `limit` as well** (`context` window / `output` per-request cap, using the model's
+  actual specs): custom providers get no public model-catalog metadata, so OpenCode falls
+  back to conservative defaults and long sessions get truncated too early.
+
+### GPT: reasoning effort
+
+OpenAI-protocol models take `reasoningEffort`; valid tiers depend on the model spec:
+
+```json
+"models": {
+  "gpt-5.6-sol": {
+    "name": "GPT-5.6 Sol",
+    "options": {
+      "reasoningEffort": "high",
+      "textVerbosity": "low"
+    }
+  }
+}
+```
+
+For Responses-only features (reasoning summaries, encrypted reasoning content), switch that
+entry's `npm` to `@ai-sdk/openai` to use `POST /v1/responses`, which unlocks options like
+`reasoningSummary` and `include: ["reasoning.encrypted_content"]`.
+
+### Variants: multiple presets per model
+
+Define several parameter sets for one model and cycle through them in-session with the
+`variant_cycle` keybind, instead of registering duplicate models:
+
+```json
+"models": {
+  "claude-sonnet-5": {
+    "name": "Claude Sonnet 5",
+    "variants": {
+      "high": { "thinking": { "type": "enabled", "budgetTokens": 16000 } },
+      "max": { "thinking": { "type": "enabled", "budgetTokens": 32000 } }
+    }
+  }
+}
+```
+
 ## Notes
 
-- `npm` is fixed to `@ai-sdk/openai-compatible`, for `/v1/chat/completions`-style services.
-- `baseURL` should end at `/v1` — do **not** append `/chat/completions`; the SDK adds the
-  operation path.
-- Keys under `models` must exactly match the model IDs the platform accepts; see
-  [GET /v1/models](/en/docs/api/models).
-- The `{env:UNIO_API_KEY}` syntax reads the key from an environment variable, keeping it out
-  of the config file.
+- **Models of different protocols must live in separate provider entries**; every model in
+  one entry uses that entry's protocol. The most common mistake is putting Claude models
+  into an `@ai-sdk/openai-compatible` entry — those requests fail instantly.
+- Before adding a newly listed model, check its `protocols` in
+  [GET /v1/models](/en/docs/api/models) to pick the right entry.
+- Model IDs are case-sensitive; restart OpenCode after registering for them to appear in
+  the `/models` picker.
+- Always inject keys via `{env:...}` / `{file:...}`; if a plaintext key ever lands in a
+  repo, rotate it in the console immediately.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| NotFoundError / requests not hitting the custom endpoint | Confirm the provider id matches the model prefix you selected; upgrade OpenCode to the latest version. |
-| 401 authentication failed | Confirm the environment variable is exported and the `{env:...}` name is spelled correctly. |
+| Requests fail in milliseconds / 503 no available route | The model is in the wrong protocol entry: check its `protocols` in [GET /v1/models](/en/docs/api/models) and move it to the matching provider. If the protocol is correct, the model momentarily has no executable candidate — retry later, see [error semantics](/en/docs/api/errors). |
+| 401 authentication failed | Confirm the environment variable is exported and the `{env:...}` name is spelled correctly; confirm the key is not revoked. |
+| 404 model not found | A key under `models` does not match a platform model ID; use [GET /v1/models](/en/docs/api/models) as the source of truth. |
 | Model missing from the picker | It is not registered under `models`; add it and restart. |
+| NotFoundError / requests not hitting the custom endpoint | Confirm the selected model's prefix matches the provider id; upgrade OpenCode to the latest version. |
+| Thinking has no effect or output is truncated | `budgetTokens` must be below `limit.output`; confirm the model has reasoning capability (see its `capabilities`). |

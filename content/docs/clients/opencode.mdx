@@ -1,11 +1,35 @@
 ---
 title: OpenCode
-description: 在 opencode.json 中添加自定义 provider。
+description: 按协议拆分 provider 接入 UnioAPI，配置推理参数与变体。
 ---
 
-## 1. 安装 OpenCode
+OpenCode 通过 [AI SDK](https://ai-sdk.dev) 连接自定义服务，一个 provider 条目只说一种协议。
+UnioAPI 是多协议网关，每个模型按实际供给的**入口协议**上架——所以接入的全部要点是：
+**按协议把模型拆进对应的 provider 条目**，放错协议的请求会在路由层直接失败。
 
-已安装的用户可直接跳到第 2 节。安装方式以
+## 1. 原理：模型跟着协议走
+
+provider 条目的 `npm` 字段决定它使用哪种协议与请求路径：
+
+| 模型 `protocols` 包含 | `npm` 填 | 实际请求 |
+| --- | --- | --- |
+| `openai` | `@ai-sdk/openai-compatible` | `POST /v1/chat/completions` |
+| `anthropic` | `@ai-sdk/anthropic` | `POST /v1/messages` |
+| `openai`（需 Responses 专属能力时） | `@ai-sdk/openai` | `POST /v1/responses` |
+
+每个模型支持哪些协议，见 [GET /v1/models](/docs/api/models) 响应中的 `protocols` 字段：
+
+```bash
+curl https://api.unioapi.com/v1/models -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+**模型放错条目的表现**：请求毫秒级失败并返回 503（`routing_no_available_channel`）——
+网关按入口协议筛选渠道，协议不匹配时没有任何可执行候选。例如把只有 `anthropic`
+协议的 Claude 模型登记在 `@ai-sdk/openai-compatible` 条目下，就会稳定复现这个错误。
+
+## 2. 安装 OpenCode
+
+已安装的用户可直接跳到第 3 节。安装方式以
 [OpenCode 官方文档](https://opencode.ai/docs)为准，常用方式：
 
 ```bash
@@ -13,13 +37,16 @@ npm install -g opencode-ai
 opencode --version
 ```
 
-## 2. 配置
+## 3. 配置 opencode.json
 
-在项目根目录创建 `opencode.json`（或编辑全局配置 `~/.config/opencode/opencode.json`）：
+先在[工作台](https://console.unioapi.com)创建 API Key。然后在项目根目录创建
+`opencode.json`（或编辑全局配置 `~/.config/opencode/opencode.json`），
+GPT 系与 Claude 系分成两个 provider 条目：
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "unioapi-claude/claude-sonnet-5",
   "provider": {
     "unioapi": {
       "npm": "@ai-sdk/openai-compatible",
@@ -29,7 +56,17 @@ opencode --version
         "apiKey": "{env:UNIO_API_KEY}"
       },
       "models": {
-        "gpt-5.6-sol": { "name": "GPT-5.6 Sol" },
+        "gpt-5.6-sol": { "name": "GPT-5.6 Sol" }
+      }
+    },
+    "unioapi-claude": {
+      "npm": "@ai-sdk/anthropic",
+      "name": "UnioAPI Claude",
+      "options": {
+        "baseURL": "https://api.unioapi.com/v1",
+        "apiKey": "{env:UNIO_API_KEY}"
+      },
+      "models": {
         "claude-sonnet-5": { "name": "Claude Sonnet 5" }
       }
     }
@@ -37,24 +74,99 @@ opencode --version
 }
 ```
 
-导出密钥后启动，在模型选择器中即可看到上面登记的模型：
+字段说明：
+
+- **provider id**（`unioapi`、`unioapi-claude`）可任取，它会成为模型全名前缀
+  （如 `unioapi-claude/claude-sonnet-5`），顶层 `model` 用这个全名设置默认模型。
+- **`baseURL` 恒以 `/v1` 结尾**，不要追加 `/chat/completions` 或 `/messages`——
+  操作路径由 SDK 拼接。两个条目共用同一个 `baseURL` 与密钥。
+- **`models` 的键必须与平台模型 ID 完全一致**，可用清单见
+  [GET /v1/models](/docs/api/models)。
+- `{env:UNIO_API_KEY}` 从环境变量读取密钥（也支持 `{file:~/.secrets/key}`），
+  避免明文写入配置。Anthropic 条目会以 `x-api-key` 头发送，平台两种鉴权头都接受。
+
+导出密钥后启动，`/models` 命令中即可看到两组模型：
 
 ```bash
 export UNIO_API_KEY="sk-unio-..."
 opencode
 ```
 
-## 说明
+## 4. 可选参数
 
-- `npm` 固定为 `@ai-sdk/openai-compatible`，适用于 `/v1/chat/completions` 形态的服务。
-- `baseURL` 以 `/v1` 结尾即可，**不要**追加 `/chat/completions`——操作路径由 SDK 拼接。
-- `models` 的键必须与平台接受的模型 ID 完全一致，可用清单见 [GET /v1/models](/docs/api/models)。
-- `{env:UNIO_API_KEY}` 语法从环境变量读取密钥，避免明文写入配置。
+### Claude：扩展思考（thinking）
+
+在模型条目的 `options` 里开启，`budgetTokens` 是单次思考预算：
+
+```json
+"models": {
+  "claude-sonnet-5": {
+    "name": "Claude Sonnet 5",
+    "limit": { "context": 200000, "output": 64000 },
+    "options": {
+      "thinking": { "type": "enabled", "budgetTokens": 16000 }
+    }
+  }
+}
+```
+
+- `budgetTokens` 必须小于单次输出上限，思考产生的 token 按推理输出价计费。
+- **建议同时声明 `limit`**（`context` 上下文窗口 / `output` 单次输出上限，
+  数值按模型规格填写）：自定义 provider 拿不到公共模型库元数据，
+  不声明时 OpenCode 会采用保守默认值，长对话会被过早截断。
+
+### GPT：推理档位
+
+OpenAI 协议模型用 `reasoningEffort` 控制推理力度，档位以模型规格为准：
+
+```json
+"models": {
+  "gpt-5.6-sol": {
+    "name": "GPT-5.6 Sol",
+    "options": {
+      "reasoningEffort": "high",
+      "textVerbosity": "low"
+    }
+  }
+}
+```
+
+若需要 Responses 专属能力（推理摘要、加密推理内容续传），把该条目的 `npm` 换成
+`@ai-sdk/openai` 走 `POST /v1/responses`，即可使用 `reasoningSummary`、
+`include: ["reasoning.encrypted_content"]` 等选项。
+
+### 变体（variants）：同一模型多档预设
+
+为同一模型定义多套参数，会话中用 `variant_cycle` 快捷键循环切换，
+不必登记重复模型：
+
+```json
+"models": {
+  "claude-sonnet-5": {
+    "name": "Claude Sonnet 5",
+    "variants": {
+      "high": { "thinking": { "type": "enabled", "budgetTokens": 16000 } },
+      "max": { "thinking": { "type": "enabled", "budgetTokens": 32000 } }
+    }
+  }
+}
+```
+
+## 注意事项
+
+- **两种协议的模型必须拆成两个 provider 条目**，同一条目内的模型全部走同一协议。
+  最常见错误就是把 Claude 模型塞进 `@ai-sdk/openai-compatible` 条目——请求会秒失败。
+- 新上架模型先查 [GET /v1/models](/docs/api/models) 的 `protocols`，再决定放进哪个条目。
+- 模型 ID 区分大小写，登记后需重启 OpenCode 才会出现在 `/models` 选择器。
+- 密钥始终用 `{env:...}` / `{file:...}` 注入；明文密钥一旦提交进仓库应立即在工作台轮换。
 
 ## 排障
 
 | 现象 | 排查 |
 | --- | --- |
-| NotFoundError / 请求未发往自定义端点 | 确认 provider id 与所选模型前缀一致；升级 OpenCode 到最新版本。 |
-| 401 认证失败 | 确认环境变量已导出，`{env:...}` 名称拼写正确。 |
+| 请求毫秒级失败 / 503 暂无可用线路 | 模型放错协议条目：对照 [GET /v1/models](/docs/api/models) 的 `protocols` 把模型移到正确的 provider；若协议无误则是该模型此刻确无可执行候选，稍后重试，见[错误语义](/docs/api/errors)。 |
+| 401 认证失败 | 确认环境变量已导出、`{env:...}` 名称拼写正确；确认密钥未撤销。 |
+| 404 模型不存在 | `models` 的键与平台模型 ID 不一致，以 [GET /v1/models](/docs/api/models) 为准。 |
 | 模型不在选择器中 | `models` 映射里没有登记该 ID，补充后重启。 |
+| NotFoundError / 请求未发往自定义端点 | 确认所选模型前缀与 provider id 一致；升级 OpenCode 到最新版本。 |
+| 思考未生效或输出被截断 | `budgetTokens` 需小于 `limit.output`；确认该模型具备推理能力（见模型 `capabilities`）。 |
