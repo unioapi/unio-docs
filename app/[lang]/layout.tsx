@@ -1,4 +1,4 @@
-import { RootProvider } from "fumadocs-ui/provider/next";
+import { RootProvider } from "@/components/root-provider";
 import { i18nProvider } from "fumadocs-ui/i18n";
 import { translations } from "@/lib/layout.shared";
 import "../global.css";
