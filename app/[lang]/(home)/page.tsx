@@ -7,5 +7,6 @@ export default async function HomePage({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  redirect(lang === "en" ? "/en/docs" : "/docs");
+  // 两种语言都带前缀，直接按 lang 拼即可。
+  redirect(`/${lang}/docs`);
 }

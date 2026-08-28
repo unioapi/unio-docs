@@ -7,8 +7,8 @@ import { i18n } from '@/lib/i18n';
 
 const i18nMiddleware = createI18nMiddleware(i18n);
 
-// Markdown 协商：默认语言（无前缀）与 /en 前缀各一组重写规则。
-const markdownRewrites = ['', '/en'].flatMap((prefix) => {
+// Markdown 协商：每种语言前缀各一组重写规则（两种语言都带前缀，见 lib/i18n.ts）。
+const markdownRewrites = i18n.languages.map((lang) => `/${lang}`).flatMap((prefix) => {
   const { rewrite: rewriteDocs } = rewritePath(
     `${prefix}${docsRoute}{/*path}`,
     `${prefix}${docsContentRoute}{/*path}/content.md`,
