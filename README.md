@@ -9,11 +9,14 @@ UnioAPI 的公开文档站，基于 Next.js + Fumadocs 构建。
 
 ```bash
 bun install
-bun run dev   # 固定端口 3800
+bun run dev   # 固定端口 18520（读取 .env.dev）
 ```
 
-与官网联调：在 `unio-website/.env.local` 中设置
-`NEXT_PUBLIC_DOCS_URL=http://localhost:3800`。
+环境文件：`.env.example` 进版本库，`.env.dev` / `.env.test` / `.env.prod`
+分别对应本地、测试、生产，由 `dotenv -e` 显式加载。
+
+与官网联调：`unio-website/.env.dev` 中已设置
+`NEXT_PUBLIC_DOCS_URL=http://127.0.0.1:18520`。
 
 ## 目录结构
 
