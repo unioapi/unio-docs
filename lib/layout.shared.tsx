@@ -1,7 +1,7 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { uiTranslations } from "fumadocs-ui/i18n";
 import { i18n } from "./i18n";
-import { consoleUrl, siteUrl } from "./shared";
+import { consoleUrl, websiteUrl } from "./shared";
 
 // Fumadocs 无内置中文语言包，界面文案需按键逐条提供（键名含上下文后缀）。
 export const translations = i18n
@@ -51,7 +51,7 @@ export const translations = i18n
     en: { displayName: "English" },
   });
 
-function Brand() {
+function Brand({ suffix }: { suffix: string }) {
   return (
     <span
       style={{
@@ -79,7 +79,7 @@ function Brand() {
         <circle cx="509" cy="129" r="44" fill="currentColor" />
       </svg>
       <span style={{ fontWeight: 650, whiteSpace: "nowrap" }}>
-        UnioAPI <span style={{ fontWeight: 450, opacity: 0.6 }}>Docs</span>
+        UnioAPI <span style={{ fontWeight: 450, opacity: 0.6 }}>{suffix}</span>
       </span>
     </span>
   );
@@ -90,11 +90,12 @@ export function baseOptions(locale: string): BaseLayoutProps {
 
   return {
     nav: {
-      title: <Brand />,
+      title: <Brand suffix={isEnglish ? "Documentation" : "文档"} />,
     },
     links: [
-      { text: isEnglish ? "Website" : "官网", url: siteUrl },
-      { text: isEnglish ? "Console" : "工作台", url: consoleUrl },
+      // external: true 会新开标签页并自动带「外链」图标。
+      { text: isEnglish ? "Website" : "官网", url: websiteUrl, external: true },
+      { text: isEnglish ? "Console" : "工作台", url: consoleUrl, external: true },
     ],
   };
 }
