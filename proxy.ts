@@ -80,8 +80,8 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
 }
 
 export const config = {
-  // 忽略 API、静态资源、favicon（含深浅色两个 mark）与根级 llms 导出文件。
+  // 忽略 API、静态资源、favicon（深浅色两套）与根级 llms 导出文件。
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|unio-mark.svg|unio-mark-white.svg|llms.txt|llms-full.txt).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|favicon-light.svg|favicon-dark.svg|unio-mark.svg|unio-mark-white.svg|llms.txt|llms-full.txt).*)',
   ],
 };
