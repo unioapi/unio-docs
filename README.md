@@ -2,21 +2,25 @@
 
 UnioAPI 的公开文档站，基于 Next.js + Fumadocs 构建。
 
-当前阶段仅在本地运行，暂不部署；目标域名为 `docs.unioapi.com`，官网通过
-`NEXT_PUBLIC_DOCS_URL` 环境变量引用文档站地址，两者解耦。
+目标域名为 `docs.unioapi.com`，官网通过 `NEXT_PUBLIC_DOCS_URL` 环境变量引用文档站地址，两者解耦。
 
 ## 本地开发
 
 ```bash
 bun install
-bun run dev   # 固定端口 18520（读取 .env.dev）
+bun run dev   # 固定端口 18520
 ```
 
-环境文件：`.env.example` 进版本库，`.env.dev` / `.env.test` / `.env.prod`
-分别对应本地、测试、生产，由 `dotenv -e` 显式加载。
+环境文件：`.env.example` 进版本库，`.env` 只服务本机 `bun dev`（不进 git），由 Next.js 原生加载。
+没有 `.env.test` / `.env.prod`：部署环境的地址在 [unio-deploy](../unio-deploy) 仓库里。
 
-与官网联调：`unio-website/.env.dev` 中已设置
-`NEXT_PUBLIC_DOCS_URL=http://127.0.0.1:18520`。
+与官网联调：`unio-website/.env` 中已设置 `NEXT_PUBLIC_DOCS_URL=http://127.0.0.1:18520`。
+
+## 部署
+
+打成容器镜像运行。烤进产物的公开地址来自 `unio-deploy/environments/<env>/<role>/env/docs-web.env`，
+由 `unio-deploy/scripts/build.sh <env> <role>` 构建时传给本仓库的 `deploy/build-image.sh --env-file`；
+版本在 `deploy/VERSION`，编排与发布在 unio-deploy。
 
 ## 目录结构
 

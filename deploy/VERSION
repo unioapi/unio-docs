@@ -4,7 +4,8 @@
 # 只改仓库内不进产物的文件不提升。修复升 PATCH，新增功能升 MINOR，只增不减。
 # 不变量：同一个 tag 永远对应同一个 commit。本地已存在同 tag 但由其它 commit 构建的镜像时，build-image.sh 会拒绝构建。
 #
-# tag 不带环境后缀：本机 / test / prod 各自在自己机器上用各自的 .env.<环境> 构建同名镜像（BUILD_ENV 在本机 deploy/env/.env.docker）。
+# tag 不带环境后缀：本机 / test / prod 各自在自己机器上构建同名镜像，烤入的公开地址来自 unio-deploy 里该环境的
+# env/<service>.env（由 unio-deploy/scripts/build.sh 传入），不来自本仓库。
 # 运行哪个版本由 unio-deploy 决定：把这里的 tag 写进 unio-deploy/environments/<env>/VERSION 的 DOCS_WEB_IMAGE_TAG。
 DOCS_WEB_IMAGE_REPOSITORY=unio-docs-web
 DOCS_WEB_IMAGE_TAG=0.1.0

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-# 基础镜像由 deploy/build-image.sh 从 deploy/env/.env.docker 传入；这里的默认值只是兜底。
+# 基础镜像由 deploy/build-image.sh 从 deploy/.env.docker 传入；这里的默认值只是兜底。
 ARG BUN_IMAGE=oven/bun:1.3.12-alpine
 ARG NODE_IMAGE=node:24-alpine
 
@@ -19,13 +19,12 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
 
 COPY . .
 
-# BUILD_ENV 决定烤进产物的 .env.<BUILD_ENV>（NEXT_PUBLIC_* 在构建期固化），由 build-image.sh 按本机 .env.docker 传入。
-# 文档内容（content/）在构建期编译进产物。
-ARG BUILD_ENV
+# 烤进产物的公开地址（NEXT_PUBLIC_*）来自 unio-deploy 里该环境的 env/docs-web.env，由 build-image.sh 以
+# --build-context appenv=<目录> 传入，落成 .env.production 供 next build 读取。仓库根目录的 .env 只给 bun dev 用，
+# 已被 .dockerignore 排除，不会进镜像。文档内容（content/）也在构建期编译进产物。
+COPY --from=appenv app.env ./.env.production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN if [ -z "$BUILD_ENV" ]; then echo "build-arg BUILD_ENV is required (dev|test|prod)" >&2; exit 1; fi \
- && if [ ! -f ".env.$BUILD_ENV" ]; then echo ".env.$BUILD_ENV not found in build context" >&2; exit 1; fi \
- && bun run "build:$BUILD_ENV"
+RUN bun run build
 
 FROM ${NODE_IMAGE} AS runtime
 
@@ -44,6 +43,8 @@ WORKDIR /app
 
 # standalone 产物自带精简过的 node_modules 与 server.js；static 与 public 要手动带上。
 # ISR 再生会写 .next/server 与 .next/cache，所以属主是运行用户，容器不能用只读根文件系统。
+# 注意 Next 会把 .env.production 一并复制进 standalone 目录，即 unio-deploy 的 env 文件会进运行时镜像——
+# 这也是那些文件只能放公开地址、不能放密钥的原因之一。compose 以 env_file 注入的同名变量优先级更高。
 COPY --from=builder --chown=unio:unio /src/.next/standalone ./
 COPY --from=builder --chown=unio:unio /src/.next/static ./.next/static
 COPY --from=builder --chown=unio:unio /src/public ./public

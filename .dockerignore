@@ -1,4 +1,4 @@
-# 构建上下文只带源码、content/ 与 .env.*（BUILD_ENV 选其一烤进产物）；依赖、.source 与产物在镜像内重新生成。
+# 构建上下文只带源码；依赖与产物在镜像内重新生成。根目录 .env* 只给 bun dev 用，烤进产物的公开地址由 build-image.sh 从 unio-deploy 传入。
 .git
 node_modules
 .next
@@ -6,7 +6,8 @@ node_modules
 out
 build
 coverage
-deploy/env
+.env*
+deploy/.env.docker
 .DS_Store
 .vscode
 .cursor
