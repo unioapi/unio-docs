@@ -1,0 +1,12 @@
+# 构建上下文只带源码、content/ 与 .env.*（BUILD_ENV 选其一烤进产物）；依赖、.source 与产物在镜像内重新生成。
+.git
+node_modules
+.next
+.source
+out
+build
+coverage
+deploy/env
+.DS_Store
+.vscode
+.cursor
