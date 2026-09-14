@@ -2,7 +2,7 @@ import { getPageImageUrl, source } from '@/lib/source';
 import { notFound } from 'next/navigation';
 import { ImageResponse } from 'next/og';
 import { generate as DefaultImage } from 'fumadocs-ui/og';
-import { appName } from '@/lib/shared';
+import { docsSiteName, docsSourcePage } from '@/lib/seo';
 
 export const revalidate = false;
 
@@ -13,9 +13,10 @@ export async function GET(
   const { lang, slug } = await params;
   const page = source.getPage(slug.slice(0, -1), lang);
   if (!page) notFound();
+  const sourceLang = docsSourcePage(page, source.getPages()).locale ?? 'cn';
 
   return new ImageResponse(
-    <DefaultImage title={page.data.title} description={page.data.description} site={appName} />,
+    <DefaultImage title={page.data.title} description={page.data.description} site={docsSiteName(sourceLang)} primaryColor="#ee725b" primaryTextColor="#ee725b" />,
     {
       width: 1200,
       height: 630,

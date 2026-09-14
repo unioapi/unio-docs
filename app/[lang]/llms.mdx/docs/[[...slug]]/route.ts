@@ -1,5 +1,6 @@
 import { getLLMText, getPageMarkdownUrl, source } from '@/lib/source';
 import { notFound } from 'next/navigation';
+import { absoluteDocsUrl } from '@/lib/seo';
 
 export const revalidate = false;
 
@@ -13,7 +14,9 @@ export async function GET(
 
   return new Response(await getLLMText(page), {
     headers: {
-      'Content-Type': 'text/markdown',
+      'Content-Type': 'text/markdown; charset=utf-8',
+      'X-Robots-Tag': 'noindex',
+      Link: `<${absoluteDocsUrl(page.url)}>; rel="canonical"`,
     },
   });
 }

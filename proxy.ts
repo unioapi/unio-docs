@@ -4,6 +4,7 @@ import { isMarkdownPreferred, rewritePath } from 'fumadocs-core/negotiation';
 import { createI18nMiddleware, DefaultFormatter } from 'fumadocs-core/i18n/middleware';
 import { docsContentRoute, docsRoute } from '@/lib/shared';
 import { i18n } from '@/lib/i18n';
+import { isIndexableHost } from '@/lib/seo';
 
 const i18nMiddleware = createI18nMiddleware(i18n);
 
@@ -34,7 +35,8 @@ const markdownRewrites = i18n.languages.map((lang) => `/${lang}`).flatMap((prefi
   return { rewriteDocs, rewriteSuffix };
 });
 
-export default function proxy(request: NextRequest, event: NextFetchEvent) {
+function handleRequest(request: NextRequest, event: NextFetchEvent) {
+  if (request.nextUrl.pathname.startsWith('/api/')) return NextResponse.next();
   for (const { rewriteDocs, rewriteSuffix } of markdownRewrites) {
     const suffixResult = rewriteSuffix(request.nextUrl.pathname);
     if (suffixResult) {
@@ -79,9 +81,19 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
   return i18nMiddleware(request, event);
 }
 
+export default async function proxy(request: NextRequest, event: NextFetchEvent) {
+  const response = (await handleRequest(request, event)) ?? NextResponse.next();
+  if (/^\/(cn|en)\/docs(?:\/|$)/.test(request.nextUrl.pathname)) response.headers.set('Vary', 'Accept');
+  if (!isIndexableHost(request.headers.get('host')) || request.nextUrl.pathname.startsWith('/api/')) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+  return response;
+}
+
 export const config = {
   // 忽略 API、静态资源、favicon（深浅色两套）与根级 llms 导出文件。
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|favicon-light.svg|favicon-dark.svg|unio-mark.svg|unio-mark-white.svg|llms.txt|llms-full.txt).*)',
+    '/api/:path*',
+    '/((?!api|_next/static|_next/image|robots.txt|sitemap.xml|favicon.ico|favicon-light.svg|favicon-dark.svg|unio-mark.svg|unio-mark-white.svg|llms.txt|llms-full.txt).*)',
   ],
 };

@@ -4,8 +4,12 @@ import { translations } from "@/lib/layout.shared";
 import "../global.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { notFound } from "next/navigation";
+import { docsSiteName, isDocsLanguage } from "@/lib/seo";
+import { siteUrl } from "@/lib/shared";
 
-export const metadata: Metadata = {
+const sharedMetadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "UnioAPI 文档",
     template: "%s | UnioAPI 文档",
@@ -29,6 +33,18 @@ export const metadata: Metadata = {
   },
 };
 
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isDocsLanguage(lang)) notFound();
+  return {
+    ...sharedMetadata,
+    title: { default: docsSiteName(lang), template: `%s | ${docsSiteName(lang)}` },
+    description: lang === "en"
+      ? "UnioAPI model API documentation: quickstart, coding tool integrations, SDK examples and API reference."
+      : sharedMetadata.description,
+  };
+}
+
 export default async function Layout({
   params,
   children,
@@ -37,6 +53,7 @@ export default async function Layout({
   children: ReactNode;
 }) {
   const { lang } = await params;
+  if (!isDocsLanguage(lang)) notFound();
 
   return (
     <html lang={lang === "en" ? "en" : "zh-CN"} suppressHydrationWarning>
