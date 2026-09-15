@@ -8,4 +8,4 @@
 # env/<service>.env（由 unio-deploy/scripts/build.sh 传入），不来自本仓库。
 # 运行哪个版本由 unio-deploy 决定：把这里的 tag 写进 unio-deploy/environments/<env>/VERSION 的 DOCS_WEB_IMAGE_TAG。
 DOCS_WEB_IMAGE_REPOSITORY=unio-docs-web
-DOCS_WEB_IMAGE_TAG=0.1.0
+DOCS_WEB_IMAGE_TAG=0.2.0
