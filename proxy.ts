@@ -94,6 +94,6 @@ export const config = {
   // 忽略 API、静态资源、favicon（深浅色两套）与根级 llms 导出文件。
   matcher: [
     '/api/:path*',
-    '/((?!api|_next/static|_next/image|robots.txt|sitemap.xml|favicon.ico|favicon-light.svg|favicon-dark.svg|unio-mark.svg|unio-mark-white.svg|llms.txt|llms-full.txt).*)',
+    '/((?!api|_next/static|_next/image|robots.txt|sitemap.xml|favicon.ico|favicon-96.png|favicon-light.svg|favicon-dark.svg|apple-touch-icon.png|unio-mark.svg|unio-mark-white.svg|unio-mark-square.png|llms.txt|llms-full.txt).*)',
   ],
 };

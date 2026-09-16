@@ -19,6 +19,8 @@ const sharedMetadata: Metadata = {
   //（Chrome 会拒绝渲染非正方形 SVG favicon，长方形 mark 不能直接用）。
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-96.png", type: "image/png", sizes: "96x96" },
       {
         url: "/favicon-light.svg",
         type: "image/svg+xml",
@@ -30,6 +32,7 @@ const sharedMetadata: Metadata = {
         media: "(prefers-color-scheme: dark)",
       },
     ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
 };
 
