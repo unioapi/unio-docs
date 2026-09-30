@@ -1,6 +1,6 @@
 ---
 title: GET /v1/models
-description: List callable models, capability tags, and each model's available entry protocols.
+description: List callable models, capability tags, and each model's available entry endpoints.
 ---
 
 ## Request
@@ -20,13 +20,17 @@ curl https://api.unioapi.com/v1/models \
       "id": "gpt-5.6-sol",
       "object": "model",
       "capabilities": ["tools", "vision"],
-      "protocols": ["openai"]
+      "endpoint_capabilities": ["openai.chat_completions", "openai.responses"],
+      "endpoints": ["openai.chat_completions", "openai.responses"],
+      "operations": ["openai.chat_completions", "openai.responses", "openai.responses.compact", "openai.responses.input_tokens"]
     },
     {
       "id": "claude-sonnet-5",
       "object": "model",
       "capabilities": ["tools"],
-      "protocols": ["anthropic", "openai"]
+      "endpoint_capabilities": ["anthropic.messages"],
+      "endpoints": ["anthropic.messages"],
+      "operations": ["anthropic.messages", "anthropic.messages.count_tokens"]
     }
   ]
 }
@@ -34,11 +38,14 @@ curl https://api.unioapi.com/v1/models \
 
 ## Field semantics
 
-- **List scope**: returns every enabled model, **not filtered by the protocol you used for the
-  request** — a model bound only to Anthropic channels still appears in the list.
-- **`protocols`** (extension field): the set of entry protocols currently able to serve the
-  model (deduplicated, ascending). Use it to decide whether the model is callable over your
-  protocol; it always equals actual supply capability — there is no "declared but unreachable".
+- **List scope**: returns models with at least one currently verified, Identity-backed primary
+  endpoint, **not filtered by the protocol you used for the request**. A model served only by
+  Anthropic channels still appears when that supply is executable; enabled but unroutable models
+  are not advertised.
+- **`endpoint_capabilities`**: stable keys for the model's currently available primary entry
+  endpoints. `endpoints` is the same set as a short projection, while `operations` includes the
+  primary and derived operations. Capability is evaluated by model × endpoint, not by upstream platform.
+- Older clients may continue reading `protocols`; it is a compatibility field, not the new capability source.
 - **`capabilities`**: aggregated capability tags for the model.
 - Appearing in the list is a product commitment, but **does not guarantee an executable
   candidate at this moment**; a 503 on call is possible — see [Errors](/en/docs/api/errors).
@@ -49,6 +56,13 @@ curl https://api.unioapi.com/v1/models \
 
 ```bash
 curl "https://api.unioapi.com/v1/models?capability=tools&capability=vision" \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+Filter by a primary endpoint when needed:
+
+```bash
+curl "https://api.unioapi.com/v1/models?endpoint=openai.responses" \
   -H "Authorization: Bearer $UNIO_API_KEY"
 ```
 

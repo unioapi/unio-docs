@@ -1,6 +1,6 @@
 ---
 title: GET /v1/models
-description: 列出可调用模型、能力标签与各模型可用的入口协议。
+description: 列出可调用模型、能力标签与各模型可用的主 Endpoint。
 ---
 
 ## 请求
@@ -20,13 +20,17 @@ curl https://api.unioapi.com/v1/models \
       "id": "gpt-5.6-sol",
       "object": "model",
       "capabilities": ["tools", "vision"],
-      "protocols": ["openai"]
+      "endpoint_capabilities": ["openai.chat_completions", "openai.responses"],
+      "endpoints": ["openai.chat_completions", "openai.responses"],
+      "operations": ["openai.chat_completions", "openai.responses", "openai.responses.compact", "openai.responses.input_tokens"]
     },
     {
       "id": "claude-sonnet-5",
       "object": "model",
       "capabilities": ["tools"],
-      "protocols": ["anthropic", "openai"]
+      "endpoint_capabilities": ["anthropic.messages"],
+      "endpoints": ["anthropic.messages"],
+      "operations": ["anthropic.messages", "anthropic.messages.count_tokens"]
     }
   ]
 }
@@ -34,10 +38,11 @@ curl https://api.unioapi.com/v1/models \
 
 ## 字段语义
 
-- **列表范围**：返回全部已启用（enabled）的模型，**不按你当前请求所用的协议过滤**——
-  只绑定 Anthropic 渠道的模型也会出现在列表里。
-- **`protocols`**（扩展字段）：该模型当前实际可用的入口协议集合（升序去重）。
-  用它判断能否以当前协议调用该模型；该字段恒等于实际供给能力，不存在“声明支持但调不通”。
+- **列表范围**：返回当前至少存在一条已验证、Identity-backed 主 Endpoint 的模型，**不按你当前请求所用的协议过滤**——
+  只绑定 Anthropic 渠道且存在可执行 Identity 的模型也会出现在列表里；仅启用但没有可执行供给的模型不会被宣传。
+- **`endpoint_capabilities`**：该模型当前实际可用的主 Endpoint 稳定键集合。`endpoints` 是同一集合的简写投影，
+  `operations` 列出主操作及其派生操作。能力按模型 × Endpoint 判断，不按上游平台判断。
+- 旧客户端可继续读取 `protocols`；它只作为兼容字段，不是新的能力判断真相。
 - **`capabilities`**：模型能力标签的聚合。
 - 模型出现在列表中表示产品上架承诺，但**不保证此刻存在可执行候选**；调用时如遇
   503 见[错误语义](/docs/api/errors)。
@@ -48,6 +53,13 @@ curl https://api.unioapi.com/v1/models \
 
 ```bash
 curl "https://api.unioapi.com/v1/models?capability=tools&capability=vision" \
+  -H "Authorization: Bearer $UNIO_API_KEY"
+```
+
+也可以按主 Endpoint 过滤：
+
+```bash
+curl "https://api.unioapi.com/v1/models?endpoint=openai.responses" \
   -H "Authorization: Bearer $UNIO_API_KEY"
 ```
 

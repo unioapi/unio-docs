@@ -9,17 +9,17 @@ model is listed under the **ingress protocol** it is actually supplied on — so
 trick to the integration is: **split your models into provider entries by protocol**.
 Requests sent over the wrong protocol fail at the routing layer.
 
-## 1. How it works: models follow protocols
+## 1. How it works: models follow entry endpoints
 
 The `npm` field of a provider entry decides the protocol and request path it uses:
 
-| Model `protocols` contains | Set `npm` to | Actual request |
+| `endpoint_capabilities` contains | Set `npm` to | Actual request |
 | --- | --- | --- |
-| `openai` | `@ai-sdk/openai-compatible` | `POST /v1/chat/completions` |
-| `anthropic` | `@ai-sdk/anthropic` | `POST /v1/messages` |
-| `openai` (when Responses-only features are needed) | `@ai-sdk/openai` | `POST /v1/responses` |
+| `openai.chat_completions` | `@ai-sdk/openai-compatible` | `POST /v1/chat/completions` |
+| `anthropic.messages` | `@ai-sdk/anthropic` | `POST /v1/messages` |
+| `openai.responses` (when Responses-only features are needed) | `@ai-sdk/openai` | `POST /v1/responses` |
 
-Check which protocols each model supports via the `protocols` field of
+Check which entry endpoints each model supports via the `endpoint_capabilities` field of
 [GET /v1/models](/en/docs/api/models):
 
 ```bash
@@ -166,7 +166,7 @@ Define several parameter sets for one model and cycle through them in-session wi
 - **Models of different protocols must live in separate provider entries**; every model in
   one entry uses that entry's protocol. The most common mistake is putting Claude models
   into an `@ai-sdk/openai-compatible` entry — those requests fail instantly.
-- Before adding a newly listed model, check its `protocols` in
+- Before adding a newly listed model, check its `endpoint_capabilities` in
   [GET /v1/models](/en/docs/api/models) to pick the right entry.
 - Model IDs are case-sensitive; restart OpenCode after registering for them to appear in
   the `/models` picker.
@@ -177,7 +177,7 @@ Define several parameter sets for one model and cycle through them in-session wi
 
 | Symptom | Check |
 | --- | --- |
-| Requests fail in milliseconds / 503 no available route | The model is in the wrong protocol entry: check its `protocols` in [GET /v1/models](/en/docs/api/models) and move it to the matching provider. If the protocol is correct, the model momentarily has no executable candidate — retry later, see [error semantics](/en/docs/api/errors). |
+| Requests fail in milliseconds / 503 no available route | The model is in the wrong entry endpoint: check its `endpoint_capabilities` in [GET /v1/models](/en/docs/api/models) and move it to the matching provider. If the entry endpoint is correct, the model momentarily has no executable candidate — retry later, see [error semantics](/en/docs/api/errors). |
 | 401 authentication failed | Confirm the environment variable is exported and the `{env:...}` name is spelled correctly; confirm the key is not revoked. |
 | 404 model not found | A key under `models` does not match a platform model ID; use [GET /v1/models](/en/docs/api/models) as the source of truth. |
 | Model missing from the picker | It is not registered under `models`; add it and restart. |

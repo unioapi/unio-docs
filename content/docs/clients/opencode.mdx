@@ -7,17 +7,18 @@ OpenCode 通过 [AI SDK](https://ai-sdk.dev) 连接自定义服务，一个 prov
 UnioAPI 是多协议网关，每个模型按实际供给的**入口协议**上架——所以接入的全部要点是：
 **按协议把模型拆进对应的 provider 条目**，放错协议的请求会在路由层直接失败。
 
-## 1. 原理：模型跟着协议走
+## 1. 原理：模型跟着入口 Endpoint 走
 
 provider 条目的 `npm` 字段决定它使用哪种协议与请求路径：
 
-| 模型 `protocols` 包含 | `npm` 填 | 实际请求 |
+| `endpoint_capabilities` 包含 | `npm` 填 | 实际请求 |
 | --- | --- | --- |
-| `openai` | `@ai-sdk/openai-compatible` | `POST /v1/chat/completions` |
-| `anthropic` | `@ai-sdk/anthropic` | `POST /v1/messages` |
-| `openai`（需 Responses 专属能力时） | `@ai-sdk/openai` | `POST /v1/responses` |
+| `openai.chat_completions` | `@ai-sdk/openai-compatible` | `POST /v1/chat/completions` |
+| `anthropic.messages` | `@ai-sdk/anthropic` | `POST /v1/messages` |
+| `openai.responses`（需 Responses 专属能力时） | `@ai-sdk/openai` | `POST /v1/responses` |
 
-每个模型支持哪些协议，见 [GET /v1/models](/docs/api/models) 响应中的 `protocols` 字段：
+每个模型支持哪些入口，见 [GET /v1/models](/docs/api/models) 响应中的
+`endpoint_capabilities` 字段；`endpoints` 是同一集合的简写投影：
 
 ```bash
 curl https://api.unioapi.com/v1/models -H "Authorization: Bearer $UNIO_API_KEY"
@@ -156,7 +157,7 @@ OpenAI 协议模型用 `reasoningEffort` 控制推理力度，档位以模型规
 
 - **两种协议的模型必须拆成两个 provider 条目**，同一条目内的模型全部走同一协议。
   最常见错误就是把 Claude 模型塞进 `@ai-sdk/openai-compatible` 条目——请求会秒失败。
-- 新上架模型先查 [GET /v1/models](/docs/api/models) 的 `protocols`，再决定放进哪个条目。
+- 新上架模型先查 [GET /v1/models](/docs/api/models) 的 `endpoint_capabilities`，再决定放进哪个条目。
 - 模型 ID 区分大小写，登记后需重启 OpenCode 才会出现在 `/models` 选择器。
 - 密钥始终用 `{env:...}` / `{file:...}` 注入；明文密钥一旦提交进仓库应立即在工作台轮换。
 
@@ -164,7 +165,7 @@ OpenAI 协议模型用 `reasoningEffort` 控制推理力度，档位以模型规
 
 | 现象 | 排查 |
 | --- | --- |
-| 请求毫秒级失败 / 503 暂无可用线路 | 模型放错协议条目：对照 [GET /v1/models](/docs/api/models) 的 `protocols` 把模型移到正确的 provider；若协议无误则是该模型此刻确无可执行候选，稍后重试，见[错误语义](/docs/api/errors)。 |
+| 请求毫秒级失败 / 503 暂无可用线路 | 模型放错入口条目：对照 [GET /v1/models](/docs/api/models) 的 `endpoint_capabilities` 把模型移到正确的 provider；若入口无误则是该模型此刻确无可执行候选，稍后重试，见[错误语义](/docs/api/errors)。 |
 | 401 认证失败 | 确认环境变量已导出、`{env:...}` 名称拼写正确；确认密钥未撤销。 |
 | 404 模型不存在 | `models` 的键与平台模型 ID 不一致，以 [GET /v1/models](/docs/api/models) 为准。 |
 | 模型不在选择器中 | `models` 映射里没有登记该 ID，补充后重启。 |

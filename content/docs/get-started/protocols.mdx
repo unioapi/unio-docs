@@ -21,8 +21,8 @@ UnioAPI 以协议原生形式提供服务：你选择哪种协议，就使用该
   OpenAI-compatible，基础地址填 `https://api.unioapi.com/v1`。
 - **沿用 Anthropic SDK 或 Claude Code**：选 Anthropic-compatible，基础地址填
   `https://api.unioapi.com`，请求需携带 `anthropic-version` 头。
-- 同一把 API Key 在两种协议下通用；模型能否用某个协议调用，取决于该模型当前可用渠道的协议集合，
-  见 [GET /v1/models](/docs/api/models) 的 `protocols` 字段。
+- 同一把 API Key 在多个主 Endpoint 下通用；模型能否用某个 Endpoint 调用，取决于当前可用供给，
+  见 [GET /v1/models](/docs/api/models) 的 `endpoint_capabilities` 字段。
 
 ## 边界说明
 

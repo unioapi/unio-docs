@@ -22,8 +22,8 @@ public protocol shape into another.
   use OpenAI-compatible with base URL `https://api.unioapi.com/v1`.
 - **Keeping an Anthropic SDK or Claude Code**: use Anthropic-compatible with base URL
   `https://api.unioapi.com`, and send the `anthropic-version` header.
-- One API key works across both protocols. Whether a model is callable over a protocol depends
-  on the protocol set of its currently available channels — see the `protocols` field of
+- One API key works across the available primary endpoints. Whether a model is callable over an
+  endpoint depends on current supply — see the `endpoint_capabilities` field of
   [GET /v1/models](/en/docs/api/models).
 
 ## Boundaries
