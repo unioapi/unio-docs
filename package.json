@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@orama/tokenizers": "^3.1.18",
-    "cnfast": "^0.1.0",
     "fumadocs-core": "^16.15.2",
     "fumadocs-mdx": "^15.3.1",
     "fumadocs-ui": "npm:@fumadocs/base-ui@^16.15.2",

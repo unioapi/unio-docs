@@ -62,21 +62,21 @@ function Brand({ suffix }: { suffix: string }) {
       }}
     >
       <svg
-        viewBox="0 0 678 496"
+        viewBox="0 0 678 678"
         fill="none"
         aria-hidden="true"
-        style={{ width: 26, height: 19, flexShrink: 0, display: "block" }}
+        style={{ width: 28, height: 28, flexShrink: 0, display: "block" }}
       >
         <g
           stroke="currentColor"
-          strokeWidth="86"
+          strokeWidth="72.24"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path d="M143 128v182c0 58 39 103 89 103 55 0 100-43 100-100v-60" />
-          <path d="M332 253v60c0 57 39 100 89 100s88-43 88-100v-60" />
+          <path d="M184.86 219.3V372.18C184.86 420.9 217.62 458.7 259.62 458.7C305.82 458.7 343.62 422.58 343.62 374.7V324.3" />
+          <path d="M343.62 324.3V374.7C343.62 422.58 376.38 458.7 418.38 458.7C460.38 458.7 492.3 422.58 492.3 374.7V324.3" />
         </g>
-        <circle cx="509" cy="129" r="44" fill="currentColor" />
+        <circle cx="492.3" cy="220.14" r="36.96" fill="currentColor" />
       </svg>
       <span style={{ fontWeight: 650, whiteSpace: "nowrap" }}>
         UnioAPI <span style={{ fontWeight: 450, opacity: 0.6 }}>{suffix}</span>
